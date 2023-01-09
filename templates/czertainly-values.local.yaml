@@ -1,0 +1,11 @@
+---
+global:
+  imagePullSecrets:
+    - name: "{{ docker.secret }}"
+  database:
+    host: "{{ ansible_default_ipv4.address }}"
+hostName: "{{ ansible_fqdn }}"
+ingress:
+  enabled: true
+trusted:
+  certificates: "{{ lookup('ansible.builtin.file', '/home/czertainly/trusted-certificates-sample.pem') }}"
