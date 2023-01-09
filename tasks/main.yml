@@ -55,20 +55,6 @@
 #     - czertainly_app
 #     - czertainly_openssl_cnf
 
-# - name: wait till prerequisites are ready (max 10min, delay=5s)
-#   shell:
-#     cmd: "/var/lib/rancher/rke2/bin/kubectl -n {{ item }} get pods -o json |jq '.items[].status.phase' | grep -v Succeeded | sort -u"
-#   register: prq
-#   until: prq.stdout == '"Running"'
-#   retries: 120
-#   delay: 5
-#   changed_when: false
-#   with_items:
-#     - cert-manager
-#     - ingress-nginx
-#   tags:
-#     - czertainly_wait4prerequisites
-
 - name: download default values.yaml file
   shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
   changed_when: false
