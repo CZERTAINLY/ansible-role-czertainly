@@ -41,20 +41,6 @@
   tags:
     - czertainly_trusted_certificates
 
-#- debug: var=ansible
-
-# - name: Create openssl.conf
-#   template:
-#     src: "openssl.j2"
-#     dest: "/home/czertainly/openssl.cnf"
-#     owner: czertainly
-#     group: czertainly
-#     mode: '0644'
-#   tags:
-#     - czertainly
-#     - czertainly_app
-#     - czertainly_openssl_cnf
-
 - name: download default values.yaml file
   shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
   changed_when: false
@@ -92,11 +78,4 @@
       - /root/install/czertainly-values.local.yaml
   tags:
     - czertainly_install
-
-# installing sometimes fails with following error, no matter if install via kubernetes.core.helm or from commandline :(
-
-# fatal: [localhost]: FAILED! => {"changed": false, "command": "/usr/sbin/helm upgrade -i --reset-values --values=/root/install/czertainly-values.yaml --values=/root/install/czertainly-values.local.yaml czertainly-tlm oci://harbor.3key.company/czertainly-helm/czertainly", "msg": "Failure when executing Helm command. Exited 1.\nstdout: Release \"czertainly-tlm\" does not exist. Installing it now.\n\nstderr: Pulled: harbor.3key.company/czertainly-helm/czertainly:0.3.0\nDigest: sha256:106adf92b1146b1cda87ec633d63562d98b4b0f4370d7a559da2e4e5b45c1cc0\nError: Internal error occurred: failed calling webhook \"validate.nginx.ingress.kubernetes.io\": failed to call webhook: Post \"https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s\": no endpoints available for service \"ingress-nginx-controller-admission\"\n", "stderr": "Pulled: harbor.3key.company/czertainly-helm/czertainly:0.3.0\nDigest: sha256:106adf92b1146b1cda87ec633d63562d98b4b0f4370d7a559da2e4e5b45c1cc0\nError: Internal error occurred: failed calling webhook \"validate.nginx.ingress.kubernetes.io\": failed to call webhook: Post \"https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s\": no endpoints available for service \"ingress-nginx-controller-admission\"\n", "stderr_lines": ["Pulled: harbor.3key.company/czertainly-helm/czertainly:0.3.0", "Digest: sha256:106adf92b1146b1cda87ec633d63562d98b4b0f4370d7a559da2e4e5b45c1cc0", "Error: Internal error occurred: failed calling webhook \"validate.nginx.ingress.kubernetes.io\": failed to call webhook: Post \"https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s\": no endpoints available for service \"ingress-nginx-controller-admission\""], "stdout": "Release \"czertainly-tlm\" does not exist. Installing it now.\n", "stdout_lines": ["Release \"czertainly-tlm\" does not exist. Installing it now."]}
-
-# - name: install czertainly
-#   shell:
-#     cmd: helm install --namespace czertainly -f /root/install/czertainly-values.yaml -f /root/install/czertainly-values.local.yaml czertainly-tlm oci://harbor.3key.company/czertainly-helm/czertainly
+  
