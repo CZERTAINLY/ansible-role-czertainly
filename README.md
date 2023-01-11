@@ -18,4 +18,4 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
     - role: czertainly
 ```
 
-For more detailed example please look at [playbook](../CZERTAINLY-Appliance/blob/http_proxy/files/czertainly.yml) for installing CZERTAINLY in Appliance.
+For more detailed example please look at [playbook](../../../CZERTAINLY-Appliance/blob/http_proxy/files/czertainly.yml) for installing CZERTAINLY in Appliance.
