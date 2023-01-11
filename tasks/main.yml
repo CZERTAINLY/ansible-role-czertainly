@@ -1,81 +1,90 @@
 ---
-- name: create namespace CZERTAINLY
-  kubernetes.core.k8s:
-    namespace: default
-    wait: true
-    state: present
-    src: /etc/ansible/roles/czertainly/files/namespace-czertainly.yaml
-  tags:
-    - czertainly_namespace
+- name: install czertaninly
+  tags: czertainly
 
-# this will always overwrite target file and we are ignoring change
-- name: create secret for harbor
-  ansible.builtin.shell:
-    cmd: /var/lib/rancher/rke2/bin/kubectl create secret -n czertainly docker-registry {{ docker.secret }} --docker-server={{ docker.server }} --docker-username={{ docker.username }} --docker-password={{ docker.password }} --docker-email={{ docker.email }} --dry-run='client' -o yaml > /root/install/docker-secret.yaml
-  changed_when: false
-  tags:
-    - czertainly_secret
+  block:
+  - name: create namespace CZERTAINLY
+    kubernetes.core.k8s:
+      namespace: default
+      wait: true
+      state: present
+      src: /etc/ansible/roles/czertainly/files/namespace-czertainly.yaml
+    tags:
+      - czertainly_namespace
 
-# this apply only when changed - there must be more elegant way, but
-# problem with dockerconfigjson is that thre is 2 times base64 encoded
-# password
-#
-- name: register secret for harbor
-  kubernetes.core.k8s:
-    namespace: czertainly
-    state: present
-    src: /root/install/docker-secret.yaml
-  tags:
-    - czertainly_secret
+  # this will always overwrite target file and we are ignoring change
+  - name: create secret for harbor
+    ansible.builtin.shell:
+      cmd: /var/lib/rancher/rke2/bin/kubectl create secret -n czertainly docker-registry {{ docker.secret }} --docker-server={{ docker.server }} --docker-username={{ docker.username }} --docker-password={{ docker.password }} --docker-email={{ docker.email }} --dry-run='client' -o yaml > /root/install/docker-secret.yaml
+    changed_when: false
+    tags:
+      - czertainly_secret
 
-# Download sample trusted-certificates.pem file
-- name: Download sample trusted-certificates.pem file
-  ansible.builtin.get_url:
-    url: https://github.com/3KeyCompany/CZERTAINLY-Helm-Charts/raw/develop/samples/trusted-certificates.pem
-    dest: /home/czertainly/trusted-certificates-sample.pem
-    force_basic_auth: yes
-    backup: no
-    owner: czertainly
-    group: czertainly
-    mode: 0644
-  tags:
-    - czertainly_trusted_certificates
+  # this apply only when changed - there must be more elegant way, but
+  # problem with dockerconfigjson is that thre is 2 times base64 encoded
+  # password
+  #
+  - name: register secret for harbor
+    kubernetes.core.k8s:
+      namespace: czertainly
+      state: present
+      src: /root/install/docker-secret.yaml
+    tags:
+      - czertainly_secret
 
-- name: download default values.yaml file
-  shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
-  changed_when: false
-  tags:
-    - czertainly_values
-    - czertainly_values_default
+  # Download sample trusted-certificates.pem file
+  - name: Download sample trusted-certificates.pem file
+    ansible.builtin.get_url:
+      url: https://github.com/3KeyCompany/CZERTAINLY-Helm-Charts/raw/develop/samples/trusted-certificates.pem
+      dest: /home/czertainly/trusted-certificates-sample.pem
+      force_basic_auth: yes
+      backup: no
+      owner: czertainly
+      group: czertainly
+      mode: 0644
+    tags:
+      - czertainly_trusted_certificates
 
-- name: copy default czertainly-values.yaml file
-  template:
-    src: "/tmp/czertainly-values-default.yaml"
-    dest: "/root/install/czertainly-values.yaml"
-    owner: czertainly
-    group: czertainly
-    mode: '0644'
-  tags:
-    - czertainly_values
-    - czertainly_values_default
+  - name: download default values.yaml file
+    shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
+    changed_when: false
+    tags:
+      - czertainly_values
+      - czertainly_values_default
 
-- name: copy local customized czertainly-values.yaml file
-  ansible.builtin.template:
-    src: "czertainly-values.local.yaml"
-    dest: "/root/install/czertainly-values.local.yaml"
-  tags:
-    - czertainly_values
-    - czertainly_values_local
+  - name: copy default czertainly-values.yaml file
+    template:
+      src: "/tmp/czertainly-values-default.yaml"
+      dest: "/root/install/czertainly-values.yaml"
+      owner: czertainly
+      group: czertainly
+      mode: '0644'
+    tags:
+      - czertainly_values
+      - czertainly_values_default
 
-- name: install czertainly
-  kubernetes.core.helm:
-    timeout: 10m
-    release_namespace: czertainly
-    release_name: czertainly-tlm
-    chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
-    values_files:
-      - /root/install/czertainly-values.yaml
-      - /root/install/czertainly-values.local.yaml
-  tags:
-    - czertainly_install
-  
+  - name: copy local customized czertainly-values.yaml file
+    ansible.builtin.template:
+      src: "czertainly-values.local.yaml"
+      dest: "/root/install/czertainly-values.local.yaml"
+    tags:
+      - czertainly_values
+      - czertainly_values_local
+
+  - name: sleep 10
+    shell:
+      cmd: sleep 10
+    tags:
+      czertainly_sleep10
+
+  - name: install czertainly
+    kubernetes.core.helm:
+      timeout: 10m
+      release_namespace: czertainly
+      release_name: czertainly-tlm
+      chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
+      values_files:
+        - /root/install/czertainly-values.yaml
+        - /root/install/czertainly-values.local.yaml
+    tags:
+      - czertainly_install
