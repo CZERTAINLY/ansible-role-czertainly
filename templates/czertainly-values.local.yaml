@@ -1,9 +1,21 @@
+# do not modify directly - ansible managed
 ---
 global:
   imagePullSecrets:
     - name: "{{ docker.secret }}"
   database:
     host: "{{ ansible_default_ipv4.address }}"
+{% if proxy is defined %}
+{% if proxy.http is defined %}
+  httpProxy: {{ proxy.http }}
+{% endif %}
+{% if proxy.http is defined %}
+  httpsProxy: {{ proxy.https }}
+{% endif %}
+{% if proxy.dont_use_for is defined %}
+  noProxy: {{ proxy.dont_use_for }}
+{% endif %}
+{% endif %}
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
