@@ -67,6 +67,10 @@
     - czertainly_values
     - czertainly_values_local
 
+- name: sleep 10
+  shell:
+    cmd: sleep 10
+
 - name: install czertainly
   kubernetes.core.helm:
     timeout: 10m
@@ -78,4 +82,4 @@
       - /root/install/czertainly-values.local.yaml
   tags:
     - czertainly_install
-  
+
