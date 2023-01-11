@@ -13,7 +13,7 @@ global:
   httpsProxy: {{ proxy.https }}
 {% endif %}
 {% if proxy.dont_use_for is defined %}
-  noProxy: {{ proxy.dont_use_for }}
+  noProxy: "{{ proxy.dont_use_for | join(', ') }}"
 {% endif %}
 {% endif %}
 hostName: "{{ ansible_fqdn }}"
