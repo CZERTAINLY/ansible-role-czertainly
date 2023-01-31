@@ -28,5 +28,11 @@ global:
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
+  certificate:
+{% if (ingress is defined) and (ingress.certificate is defined) and (ingress.private_key is defined) %}
+    source: external
+{% else %}
+    source: internal
+{% endif %}
 trusted:
   certificates: "{{ lookup('ansible.builtin.file', '/home/czertainly/trusted-certificates-sample.pem') }}"

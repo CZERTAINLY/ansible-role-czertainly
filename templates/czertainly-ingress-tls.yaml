@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  tls.crt: {{ ingress.certificate }}
+  tls.key: {{ ingress.private_key }}
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: czertainly-ingress-tls
+  namespace: czertainly
+type: kubernetes.io/tls
