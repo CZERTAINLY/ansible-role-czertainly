@@ -1,9 +1,30 @@
+# do not modify directly - ansible managed
 ---
 global:
   imagePullSecrets:
     - name: "{{ docker.secret }}"
   database:
     host: "{{ ansible_default_ipv4.address }}"
+{% if postgres.database is defined %}
+    name: "{{ postgres.database }}"
+{% endif %}
+{% if postgres.username is defined %}
+    username: "{{ postgres.username }}"
+{% endif %}
+{% if postgres.password is defined %}
+    password: "{{ postgres.password }}"
+{% endif %}
+{% if proxy is defined %}
+{% if proxy.http is defined %}
+  httpProxy: {{ proxy.http }}
+{% endif %}
+{% if proxy.http is defined %}
+  httpsProxy: {{ proxy.https }}
+{% endif %}
+{% if proxy.dont_use_for is defined %}
+  noProxy: "{{ proxy.dont_use_for | join(', ') }}"
+{% endif %}
+{% endif %}
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
