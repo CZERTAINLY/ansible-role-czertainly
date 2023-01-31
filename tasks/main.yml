@@ -39,7 +39,7 @@
       owner: czertainly
       group: czertainly
       mode: '0644'
-    when: (ingress is defined) and (ingress.certificate is defined) and (ingress.private_key is defined)
+    when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
     tags:
       - czertainly_ingress_tls
 
@@ -48,7 +48,7 @@
       namespace: czertainly
       state: present
       src: "/root/install/czertainly-ingress-tls.yaml"
-    when: (ingress is defined) and (ingress.certificate is defined) and (ingress.private_key is defined)
+    when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
     tags:
       - czertainly_ingress_tls
 

@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
-  tls.crt: {{ ingress.certificate }}
-  tls.key: {{ ingress.private_key }}
+  tls.crt: "{{ lookup('ansible.builtin.file', ingress.certificate_file) | b64encode }}"
+  tls.key: "{{ lookup('ansible.builtin.file', ingress.private_key_file) | b64encode }}"
 kind: Secret
 metadata:
   creationTimestamp: null
