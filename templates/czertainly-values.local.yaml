@@ -29,7 +29,7 @@ hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
   certificate:
-{% if (ingress is defined) and (ingress.certificate is defined) and (ingress.private_key is defined) %}
+{% if (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined) %}
     source: external
 {% else %}
     source: internal
