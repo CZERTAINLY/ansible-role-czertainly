@@ -1,6 +1,9 @@
 # do not modify directly - ansible managed
 ---
 global:
+  image:
+     pullSecrets:
+      - {{ docker.secret }}
   imagePullSecrets:
     - name: "{{ docker.secret }}"
   database:
