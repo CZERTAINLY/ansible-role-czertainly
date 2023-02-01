@@ -25,6 +25,10 @@ global:
   noProxy: "{{ proxy.dont_use_for | join(', ') }}"
 {% endif %}
 {% endif %}
+{% if trustedCA_file is defined %}
+  trusted:
+    certificates: {{ lookup('ansible.builtin.file', trustedCA_file) | to_nice_json(indent=0) }}
+{% endif %}
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
@@ -34,5 +38,3 @@ ingress:
 {% else %}
     source: internal
 {% endif %}
-trusted:
-  certificates: "{{ lookup('ansible.builtin.file', '/home/czertainly/trusted-certificates-sample.pem') }}"
