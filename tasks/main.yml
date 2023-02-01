@@ -52,19 +52,6 @@
     tags:
       - czertainly_ingress_tls
 
-  # Download sample trusted-certificates.pem file
-  - name: Download sample trusted-certificates.pem file
-    ansible.builtin.get_url:
-      url: https://github.com/3KeyCompany/CZERTAINLY-Helm-Charts/raw/develop/samples/trusted-certificates.pem
-      dest: /home/czertainly/trusted-certificates-sample.pem
-      force_basic_auth: yes
-      backup: no
-      owner: czertainly
-      group: czertainly
-      mode: 0644
-    tags:
-      - czertainly_trusted_certificates
-
   - name: download default values.yaml file
     shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
     changed_when: false
