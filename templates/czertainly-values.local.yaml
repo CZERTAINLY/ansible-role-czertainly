@@ -41,3 +41,54 @@ ingress:
 {% else %}
     source: internal
 {% endif %}
+
+registerConnectors: true
+
+commonCredentialProvider:
+{% if (czertainly is defined) and (czertainly.commonCredentialProvider is defined) and czertainly.commonCredentialProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+ejbcaNgConnector:
+{% if (czertainly is defined) and (czertainly.ejbcaNgConnector is defined) and czertainly.ejbcaNgConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+msAdcsConnector:
+{% if (czertainly is defined) and (czertainly.msAdcsConnector is defined) and czertainly.msAdcsConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+x509ComplianceProvider:
+{% if (czertainly is defined) and (czertainly.x509ComplianceProvider is defined) and czertainly.x509ComplianceProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+cryptosenseDiscoveryProvider:
+{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+networkDiscoveryProvider:
+{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+keystoreEntityProvider:
+{% if (czertainly is defined) and (czertainly.keystoreEntityProvider is defined) and czertainly.keystoreEntityProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
