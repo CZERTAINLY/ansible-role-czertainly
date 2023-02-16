@@ -92,3 +92,10 @@ keystoreEntityProvider:
 {% else %}
   enabled: false
 {% endif %}
+
+softwareCryptographyProvider:
+{% if (czertainly is defined) and (czertainly.softwareCryptographyProvider is defined) and czertainly.softwareCryptographyProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
