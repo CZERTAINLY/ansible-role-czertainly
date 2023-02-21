@@ -1,3 +1,5 @@
+# {{ ansible_managed }}
+
 apiVersion: v1
 data:
   tls.crt: "{{ lookup('ansible.builtin.file', ingress.certificate_file) | b64encode }}"
