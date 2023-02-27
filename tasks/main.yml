@@ -84,6 +84,23 @@
     tags:
       czertainly_sleep10
 
+  - name: check if custom czertainly-values.custom.yaml
+    ansible.builtin.stat:
+      path: /home/czertacinly/czertainly-values.custom.yaml
+    register:
+      custom_file
+    tags:
+      - czertainly_values
+
+  - name: define value files for helm instalation
+    ansible.builtin.set_fact:
+      values_files:
+        - '/root/install/czertainly-values.yaml'
+        - '/root/install/czertainly-values.local.yaml'
+        - "{{ custom_file.stat.path | default('/dev/null') }}"
+    tags:
+      - czertainly_values
+
   - name: install czertainly
     kubernetes.core.helm:
       timeout: 10m
@@ -91,8 +108,7 @@
       release_name: czertainly-tlm
       chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
       chart_version: "{{ czertainly.version }}"
-      values_files:
-        - /root/install/czertainly-values.yaml
-        - /root/install/czertainly-values.local.yaml
+      wait: true
+      values_files: "{{ values_files }}"
     tags:
       - czertainly_install
