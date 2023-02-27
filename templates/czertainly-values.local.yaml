@@ -1,4 +1,4 @@
-# do not modify directly - ansible managed
+# {{ ansible_managed }}
 ---
 global:
   image:
