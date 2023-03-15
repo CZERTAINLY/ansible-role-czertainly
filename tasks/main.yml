@@ -32,21 +32,28 @@
     tags:
       - czertainly_secret
 
-  # Download sample trusted-certificates.pem file
-  - name: Download sample trusted-certificates.pem file
-    ansible.builtin.get_url:
-      url: https://github.com/3KeyCompany/CZERTAINLY-Helm-Charts/raw/develop/samples/trusted-certificates.pem
-      dest: /home/czertainly/trusted-certificates-sample.pem
-      force_basic_auth: yes
-      backup: no
+  - name: create czertainly-ingress-tls
+    template:
+      src: "czertainly-ingress-tls.yaml"
+      dest: "/root/install/czertainly-ingress-tls.yaml"
       owner: czertainly
       group: czertainly
-      mode: 0644
+      mode: '0644'
+    when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
     tags:
-      - czertainly_trusted_certificates
+      - czertainly_ingress_tls
+
+  - name: register czertainly-ingress-tls
+    kubernetes.core.k8s:
+      namespace: czertainly
+      state: present
+      src: "/root/install/czertainly-ingress-tls.yaml"
+    when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
+    tags:
+      - czertainly_ingress_tls
 
   - name: download default values.yaml file
-    shell: helm show values oci://harbor.3key.company/czertainly-helm/czertainly > /tmp/czertainly-values-default.yaml
+    shell: helm show values --version "{{ czertainly.version }}" oci://harbor.3key.company/czertainly-helm/czertainly  > /tmp/czertainly-values-default.yaml
     changed_when: false
     tags:
       - czertainly_values
@@ -77,14 +84,31 @@
     tags:
       czertainly_sleep10
 
+  - name: check if custom czertainly-values.custom.yaml
+    ansible.builtin.stat:
+      path: /home/czertacinly/czertainly-values.custom.yaml
+    register:
+      custom_file
+    tags:
+      - czertainly_values
+
+  - name: define value files for helm instalation
+    ansible.builtin.set_fact:
+      values_files:
+        - '/root/install/czertainly-values.yaml'
+        - '/root/install/czertainly-values.local.yaml'
+        - "{{ custom_file.stat.path | default('/dev/null') }}"
+    tags:
+      - czertainly_values
+
   - name: install czertainly
     kubernetes.core.helm:
       timeout: 10m
       release_namespace: czertainly
       release_name: czertainly-tlm
       chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
-      values_files:
-        - /root/install/czertainly-values.yaml
-        - /root/install/czertainly-values.local.yaml
+      chart_version: "{{ czertainly.version }}"
+      wait: true
+      values_files: "{{ values_files }}"
     tags:
       - czertainly_install

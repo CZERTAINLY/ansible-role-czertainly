@@ -1,6 +1,9 @@
-# do not modify directly - ansible managed
+# {{ ansible_managed }}
 ---
 global:
+  image:
+     pullSecrets:
+      - {{ docker.secret }}
   imagePullSecrets:
     - name: "{{ docker.secret }}"
   database:
@@ -25,8 +28,74 @@ global:
   noProxy: "{{ proxy.dont_use_for | join(', ') }}"
 {% endif %}
 {% endif %}
+{% if trustedCA_file is defined %}
+  trusted:
+    certificates: {{ lookup('ansible.builtin.file', trustedCA_file) | to_nice_json(indent=0) }}
+{% endif %}
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
-trusted:
-  certificates: "{{ lookup('ansible.builtin.file', '/home/czertainly/trusted-certificates-sample.pem') }}"
+  certificate:
+{% if (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined) %}
+    source: external
+{% else %}
+    source: internal
+{% endif %}
+
+registerConnectors: true
+
+commonCredentialProvider:
+{% if (czertainly is defined) and (czertainly.commonCredentialProvider is defined) and czertainly.commonCredentialProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+ejbcaNgConnector:
+{% if (czertainly is defined) and (czertainly.ejbcaNgConnector is defined) and czertainly.ejbcaNgConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+msAdcsConnector:
+{% if (czertainly is defined) and (czertainly.msAdcsConnector is defined) and czertainly.msAdcsConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+x509ComplianceProvider:
+{% if (czertainly is defined) and (czertainly.x509ComplianceProvider is defined) and czertainly.x509ComplianceProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+cryptosenseDiscoveryProvider:
+{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+networkDiscoveryProvider:
+{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+keystoreEntityProvider:
+{% if (czertainly is defined) and (czertainly.keystoreEntityProvider is defined) and czertainly.keystoreEntityProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+softwareCryptographyProvider:
+{% if (czertainly is defined) and (czertainly.softwareCryptographyProvider is defined) and czertainly.softwareCryptographyProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
