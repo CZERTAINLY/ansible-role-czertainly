@@ -8,7 +8,7 @@
       namespace: default
       wait: true
       state: present
-      src: /etc/ansible/roles/czertainly/files/namespace-czertainly.yaml
+      src: namespace-czertainly.yaml
     tags:
       - czertainly_namespace
 
