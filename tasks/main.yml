@@ -86,7 +86,7 @@
     tags:
       czertainly_sleep10
 
-  - name: check if custom czertainly-values.custom.yaml
+  - name: check for custom czertainly-values.custom.yaml
     ansible.builtin.stat:
       path: /home/czertacinly/czertainly-values.custom.yaml
     register:
