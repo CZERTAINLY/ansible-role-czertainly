@@ -17,6 +17,7 @@
     ansible.builtin.shell:
       cmd: /var/lib/rancher/rke2/bin/kubectl create secret -n czertainly docker-registry {{ docker.secret }} --docker-server={{ docker.server }} --docker-username={{ docker.username }} --docker-password={{ docker.password }} --docker-email={{ docker.email }} --dry-run='client' -o yaml > /root/install/docker-secret.yaml
     changed_when: false
+    when: (docker.username is defined) and (docker.password is defined)
     tags:
       - czertainly_secret
 
@@ -29,6 +30,7 @@
       namespace: czertainly
       state: present
       src: /root/install/docker-secret.yaml
+    when: (docker.username is defined) and (docker.password is defined)
     tags:
       - czertainly_secret
 
