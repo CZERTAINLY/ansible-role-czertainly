@@ -88,7 +88,7 @@
 
   - name: check for custom czertainly-values.custom.yaml
     ansible.builtin.stat:
-      path: /home/czertacinly/czertainly-values.custom.yaml
+      path: /home/czertainly/czertainly-values.custom.yaml
     register:
       custom_file
     tags:
