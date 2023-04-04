@@ -80,12 +80,6 @@
       - czertainly_values
       - czertainly_values_local
 
-  - name: sleep 10
-    shell:
-      cmd: sleep 10
-    tags:
-      czertainly_sleep10
-
   - name: check for custom czertainly-values.custom.yaml
     ansible.builtin.stat:
       path: /home/czertainly/czertainly-values.custom.yaml
