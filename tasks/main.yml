@@ -72,6 +72,15 @@
       - czertainly_values
       - czertainly_values_default
 
+  - name: load default values into memory
+    ansible.builtin.slurp:
+      src: /root/install/czertainly-values.yaml
+    register: default_values
+
+  - name: interpret default values as yaml
+    ansible.builtin.set_fact:
+      default_values: '{{ default_values.content | b64decode | from_yaml }}'
+
   - name: copy local customized czertainly-values.yaml file
     ansible.builtin.template:
       src: "czertainly-values.local.yaml"
