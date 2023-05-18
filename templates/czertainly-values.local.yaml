@@ -38,6 +38,30 @@ global:
   trusted:
     certificates: {{ default_values.trusted.certificates | to_nice_json(indent=0) }}
 {% endif %}
+  keycloak:
+{% if (czertainly is defined) and (czertainly.keycloak is defined) and czertainly.keycloak %}
+    enabled: true
+    # client secret must be set if keycloak is enabled
+    clientSecret: "{{ keycloak_client_secret }}"
+{% else %}
+    enabled: false
+{% endif %}
+  hostName: "{{ ansible_fqdn }}"
+  admin:
+    username: "admin"
+    password: "newgenerationtrustcare"
+    name: "admin"
+    surname: "admin"
+    email: "admin@czertainly.local"
+
+# this is needed only for KeyCloak
+{% if (czertainly is defined) and (czertainly.keycloak is defined) and czertainly.keycloak %}
+apiGateway:
+  hostAliases:
+    resolveInternalKeycloak: true
+  trustedIps: "0.0.0.0/0,::/0"
+{% endif %}
+
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
@@ -101,6 +125,13 @@ keystoreEntityProvider:
 
 softwareCryptographyProvider:
 {% if (czertainly is defined) and (czertainly.softwareCryptographyProvider is defined) and czertainly.softwareCryptographyProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+utilsService:
+{% if (czertainly is defined) and (czertainly.utilsService is defined) and czertainly.utilsService %}
   enabled: true
 {% else %}
   enabled: false
