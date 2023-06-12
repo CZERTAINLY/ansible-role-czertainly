@@ -54,6 +54,18 @@
     tags:
       - czertainly_ingress_tls
 
+  - name: create schema for KeyCloak
+    become: yes
+    become_user: postgres
+    community.postgresql.postgresql_schema:
+      name: keycloak
+      owner: "{{ postgres.username | default('czertainlyuser') }}"
+      database: "{{ postgres.database | default('czertainlydb') }}"
+    when:
+      czertainly.keycloak
+    tags:
+      - czertainly_keycloak_schema
+
   - name: download default values.yaml file
     shell: helm show values --version "{{ czertainly.version }}" oci://harbor.3key.company/czertainly-helm/czertainly  > /tmp/czertainly-values-default.yaml
     changed_when: false
