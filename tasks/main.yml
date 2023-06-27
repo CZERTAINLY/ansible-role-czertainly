@@ -12,6 +12,21 @@
     tags:
       - czertainly_namespace
 
+  # in case invalid credentials this fails
+  - name: verify harbor credentials
+    ansible.builtin.uri:
+      url: 'https://harbor.3key.company/api/v2.0/users/current'
+      user: "{{ docker.username }}"
+      password: "{{ docker.password }}"
+      method: GET
+      force_basic_auth: true
+      headers:
+        accept: application/json
+    when: (docker.username is defined) and (docker.password is defined)
+    register: result
+    tags:
+      - czertainly_secret
+
   # this will always overwrite target file and we are ignoring change
   - name: create secret for harbor
     ansible.builtin.shell:
