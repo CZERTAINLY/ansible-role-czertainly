@@ -77,7 +77,7 @@
       owner: "{{ postgres.username | default('czertainlyuser') }}"
       database: "{{ postgres.database | default('czertainlydb') }}"
     when:
-      czertainly.keycloak
+      (czertainly.keycloak is defined) and czertainly.keycloak
     tags:
       - czertainly_keycloak_schema
 
