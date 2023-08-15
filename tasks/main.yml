@@ -12,6 +12,17 @@
     tags:
       - czertainly_namespace
 
+  # components that are not publicaly available / Harbor Credentials are required
+  #   * MS ADCS
+  #   * Utils Service
+  - name: verify harbor credentials are defined
+    ansible.builtin.assert:
+      that:
+        - docker.username is defined
+        - docker.password is defined
+      fail_msg: "Credentials for private docker repository is required when installing MS ADCS or Utils Service."
+    when: czertainly.utilsService or czertainly.keycloak
+
   # in case invalid credentials this fails
   - name: verify harbor credentials
     ansible.builtin.uri:
