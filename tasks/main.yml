@@ -152,7 +152,7 @@
 
   - name: install czertainly
     kubernetes.core.helm:
-      timeout: 10m
+      timeout: 15m
       release_namespace: czertainly
       release_name: czertainly-tlm
       chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
