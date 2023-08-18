@@ -46,6 +46,13 @@ global:
 {% else %}
     enabled: false
 {% endif %}
+  utils:
+{% if (czertainly is defined) and (czertainly.utilsService is defined) and czertainly.utilsService %}
+    enabled: true
+{% else %}
+    enabled: false
+{% endif %}
+
   hostName: "{{ ansible_fqdn }}"
   admin:
     username: "admin"
@@ -125,13 +132,6 @@ keystoreEntityProvider:
 
 softwareCryptographyProvider:
 {% if (czertainly is defined) and (czertainly.softwareCryptographyProvider is defined) and czertainly.softwareCryptographyProvider %}
-  enabled: true
-{% else %}
-  enabled: false
-{% endif %}
-
-utilsService:
-{% if (czertainly is defined) and (czertainly.utilsService is defined) and czertainly.utilsService %}
   enabled: true
 {% else %}
   enabled: false
