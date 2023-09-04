@@ -61,8 +61,8 @@
       - czertainly_secret
 
   - name: create czertainly-ingress-tls
-    ansible.builtin.copy:
-      src: "czertainly-ingress-tls.yaml"
+    ansible.builtin.template:
+      src: "czertainly-ingress-tls.yaml.j2"
       dest: "/root/install/czertainly-ingress-tls.yaml"
       owner: czertainly
       group: czertainly
@@ -120,8 +120,8 @@
       default_values: '{{ default_values.content | b64decode | from_yaml }}'
 
   - name: copy local customized czertainly-values.yaml file
-    ansible.builtin.copy:
-      src: "czertainly-values.local.yaml"
+    ansible.builtin.template:
+      src: "czertainly-values.local.yaml.j2"
       dest: "/root/install/czertainly-values.local.yaml"
     tags:
       - czertainly_values
