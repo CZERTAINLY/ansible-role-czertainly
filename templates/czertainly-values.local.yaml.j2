@@ -136,3 +136,29 @@ softwareCryptographyProvider:
 {% else %}
   enabled: false
 {% endif %}
+
+emailNotificationProvider:
+{% if (czertainly is defined) and (czertainly.emailProvider is defined) and czertainly.emailProvider %}
+  enabled: true
+  smtp:
+{% if smtp_host is defined %}
+    host: {{ smtp_host }}
+{% endif %}
+{% if smtp_port is defined %}
+    port: {{ smtp_port }}
+{% endif %}
+{% if smtp_tls is defined %}
+    tls: {{ smtp_tls }}
+{% endif %}
+{% if smtp_username is defined %}
+    auth: true
+    username: {{ smtp_username }}
+{% if smtp_password  is defined %}
+    password: {{ smtp_password }}
+{% endif %}
+{% else %}
+    auth: false
+{% endif %}
+{% else %}
+  enabled: false
+{% endif %}
