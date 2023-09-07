@@ -136,3 +136,10 @@ softwareCryptographyProvider:
 {% else %}
   enabled: false
 {% endif %}
+
+emailNotificationProvider:
+{% if (czertainly is defined) and (czertainly.emailProvider is defined) and czertainly.emailProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
