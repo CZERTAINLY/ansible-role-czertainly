@@ -21,7 +21,7 @@
         - docker.username is defined
         - docker.password is defined
       fail_msg: "Credentials for private docker repository is required when installing MS ADCS or Utils Service."
-    when: czertainly.utilsService or czertainly.keycloak
+    when: czertainly.msAdcsConnector or czertainly.utilsService
 
   # in case invalid credentials this fails
   - name: verify harbor credentials
