@@ -102,6 +102,13 @@ msAdcsConnector:
   enabled: false
 {% endif %}
 
+pyAdcsConnector:
+{% if (czertainly is defined) and (czertainly.pymsAdcsConnector is defined) and czertainly.pymsAdcsConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
 x509ComplianceProvider:
 {% if (czertainly is defined) and (czertainly.x509ComplianceProvider is defined) and czertainly.x509ComplianceProvider %}
   enabled: true
