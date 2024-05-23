@@ -124,7 +124,7 @@ cryptosenseDiscoveryProvider:
 {% endif %}
 
 networkDiscoveryProvider:
-{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+{% if (czertainly is defined) and (czertainly.networkDiscoveryProvider is defined) and czertainly.networkDiscoveryProvider %}
   enabled: true
 {% else %}
   enabled: false
