@@ -20,8 +20,8 @@
       that:
         - docker.username is defined
         - docker.password is defined
-      fail_msg: "Credentials for private docker repository is required when installing MS ADCS or Utils Service."
-    when: czertainly.msAdcsConnector or czertainly.utilsService
+      fail_msg: "Credentials for private docker repository is required when installing MS ADCS (both versions), Utils Service and Cryptosense Discovery Provider"
+    when: czertainly.msAdcsConnector or czertainly.pymsAdcsConnector or czertainly.utilsService or czertainly.cryptosenseDiscoveryProvider
 
   # in case invalid credentials this fails
   - name: verify harbor credentials
