@@ -13,7 +13,7 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
 - name: czertainly host config
   hosts: all
   connection: local
-  
+
   roles:
     - role: czertainly
 ```
