@@ -109,6 +109,13 @@ pyAdcsConnector:
   enabled: false
 {% endif %}
 
+hashicorpVaultConnector:
+{% if (czertainly is defined) and (czertainly.hashicorpVaultConnector is defined) and czertainly.hashicorpVaultConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
 x509ComplianceProvider:
 {% if (czertainly is defined) and (czertainly.x509ComplianceProvider is defined) and czertainly.x509ComplianceProvider %}
   enabled: true
