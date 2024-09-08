@@ -144,12 +144,6 @@
     tags:
       - czertainly_values
 
-  - name: wait a while
-    shell:
-      cmd: sleep 10
-    tags:
-      czertainly_sleep10
-
   - name: install czertainly
     kubernetes.core.helm:
       timeout: 20m
