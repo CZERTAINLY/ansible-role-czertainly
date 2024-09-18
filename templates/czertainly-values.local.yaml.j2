@@ -130,6 +130,13 @@ cryptosenseDiscoveryProvider:
   enabled: false
 {% endif %}
 
+ctLogsDiscoveryProvider:
+{% if (czertainly is defined) and (czertainly.ctLogsDiscoveryProvider is defined) and czertainly.ctLogsDiscoveryProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
 networkDiscoveryProvider:
 {% if (czertainly is defined) and (czertainly.networkDiscoveryProvider is defined) and czertainly.networkDiscoveryProvider %}
   enabled: true
