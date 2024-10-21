@@ -1,11 +1,13 @@
 # {{ ansible_managed }}
 ---
 global:
+{% if docker.username is defined and docker.password is defined %}
   image:
      pullSecrets:
       - {{ docker.secret }}
   imagePullSecrets:
     - name: "{{ docker.secret }}"
+{% endif %}
   database:
     host: "{{ ansible_default_ipv4.address }}"
 {% if postgres.database is defined %}
