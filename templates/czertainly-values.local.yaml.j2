@@ -97,13 +97,6 @@ ejbcaNgConnector:
   enabled: false
 {% endif %}
 
-msAdcsConnector:
-{% if (czertainly is defined) and (czertainly.msAdcsConnector is defined) and czertainly.msAdcsConnector %}
-  enabled: true
-{% else %}
-  enabled: false
-{% endif %}
-
 pyAdcsConnector:
 {% if (czertainly is defined) and (czertainly.pymsAdcsConnector is defined) and czertainly.pymsAdcsConnector %}
   enabled: true
