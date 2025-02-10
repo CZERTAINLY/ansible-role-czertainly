@@ -13,15 +13,15 @@
         - czertainly_namespace
 
     # components that are not publicaly available / Harbor Credentials are required
-    #   * pyMS ADCS
     #   * Utils Service
+    #   * Cryptosense Discovery Provider
     - name: Verify harbor credentials are defined
       ansible.builtin.assert:
         that:
           - docker.username is defined
           - docker.password is defined
         fail_msg: >
-          "Credentials for private docker repository is required when installing MS ADCS (both versions),
+          "Credentials for private docker repository is required when installing
           Utils Service and Cryptosense Discovery Provider"
       when: czertainly.utilsService or czertainly.cryptosenseDiscoveryProvider
 
