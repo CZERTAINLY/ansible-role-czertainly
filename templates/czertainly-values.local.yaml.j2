@@ -178,3 +178,10 @@ emailNotificationProvider:
 {% else %}
   enabled: false
 {% endif %}
+
+webhookNotificationProvider:
+{% if (czertainly is defined) and (czertainly.webhookNotificationProvider is defined) and czertainly.webhookNotificationProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
