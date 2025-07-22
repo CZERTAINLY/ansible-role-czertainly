@@ -13,7 +13,6 @@
         - czertainly_namespace
 
     # components that are not publicaly available / Harbor Credentials are required
-    #   * Utils Service
     #   * Cryptosense Discovery Provider
     - name: Verify harbor credentials are defined
       ansible.builtin.assert:
@@ -21,9 +20,8 @@
           - docker.username is defined
           - docker.password is defined
         fail_msg: >
-          "Credentials for private docker repository is required when installing
-          Utils Service and Cryptosense Discovery Provider"
-      when: czertainly.utilsService or czertainly.cryptosenseDiscoveryProvider
+          "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
+      when: czertainly.cryptosenseDiscoveryProvider
 
     # in case invalid credentials this fails
     - name: Verify harbor credentials
