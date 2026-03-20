@@ -1,14 +1,17 @@
 ---
-- name: Install czertaninly
+- name: Install ILM
   tags: czertainly
 
   block:
-    - name: Create namespace CZERTAINLY
+    - name: Create namespace
       kubernetes.core.k8s:
-        namespace: default
         wait: true
         state: present
-        src: namespace-czertainly.yaml
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ app_namespace }}"
       tags:
         - czertainly_namespace
 
@@ -41,7 +44,7 @@
     - name: Create secret for harbor
       ansible.builtin.shell:
         cmd: >
-          /var/lib/rancher/rke2/bin/kubectl create secret -n czertainly
+          /var/lib/rancher/rke2/bin/kubectl create secret -n {{ app_namespace }}
           docker-registry {{ docker.secret }} --docker-server={{ docker.server }}
           --docker-username={{ docker.username }} --docker-password={{ docker.password }}
           --docker-email={{ docker.email }} --dry-run='client' -o yaml > /root/install/docker-secret.yaml
@@ -56,17 +59,17 @@
     #
     - name: Register secret for harbor
       kubernetes.core.k8s:
-        namespace: czertainly
+        namespace: "{{ app_namespace }}"
         state: present
         src: /root/install/docker-secret.yaml
       when: (docker.username is defined) and (docker.password is defined)
       tags:
         - czertainly_secret
 
-    - name: Create czertainly-ingress-tls
+    - name: Create ingress-tls
       ansible.builtin.template:
-        src: "czertainly-ingress-tls.yaml.j2"
-        dest: "/root/install/czertainly-ingress-tls.yaml"
+        src: "ingress-tls.yaml.j2"
+        dest: "/root/install/ingress-tls.yaml"
         owner: "{{ appliance_user }}"
         group: "{{ appliance_group }}"
         mode: '0644'
@@ -74,11 +77,11 @@
       tags:
         - czertainly_ingress_tls
 
-    - name: Register czertainly-ingress-tls
+    - name: Register ingress-tls
       kubernetes.core.k8s:
-        namespace: czertainly
+        namespace: "{{ app_namespace }}"
         state: present
-        src: "/root/install/czertainly-ingress-tls.yaml"
+        src: "/root/install/ingress-tls.yaml"
       when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
       tags:
         - czertainly_ingress_tls
@@ -88,16 +91,16 @@
       become_user: postgres
       community.postgresql.postgresql_schema:
         name: keycloak
-        owner: "{{ postgres.username | default('czertainlyuser') }}"
-        database: "{{ postgres.database | default('czertainlydb') }}"
+        owner: "{{ postgres.username | default('ilmuser') }}"
+        database: "{{ postgres.database | default('ilmdb') }}"
       when:
         (czertainly.keycloak is defined) and czertainly.keycloak
       tags:
         - czertainly_keycloak_schema
 
-    - name: Check for custom czertainly-values.custom.yaml
+    - name: Check for custom values.custom.yaml
       ansible.builtin.stat:
-        path: /home/{{ appliance_user }}/czertainly-values.custom.yaml
+        path: /home/{{ appliance_user }}/values.custom.yaml
       register:
         custom_file
       tags:
@@ -106,8 +109,7 @@
     - name: Define value files for helm instalation
       ansible.builtin.set_fact:
         values_files:
-          - '/root/install/czertainly-values.yaml'
-          - '/root/install/czertainly-values.local.yaml'
+          - '/root/install/values.local.yaml'
           - "{{ custom_file.stat.path | default('/dev/null') }}"
       tags:
         - czertainly_values
@@ -115,8 +117,8 @@
     - name: Install czertainly
       kubernetes.core.helm:
         timeout: 20m
-        release_namespace: czertainly
-        release_name: czertainly-tlm
+        release_namespace: "{{ app_namespace }}"
+        release_name: "{{ app_release_name }}"
         chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
         chart_version: "{{ czertainly.version }}"
         wait: true
