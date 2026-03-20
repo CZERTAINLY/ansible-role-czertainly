@@ -68,8 +68,8 @@
       ansible.builtin.template:
         src: "czertainly-ingress-tls.yaml.j2"
         dest: "/root/install/czertainly-ingress-tls.yaml"
-        owner: czertainly
-        group: czertainly
+        owner: "{{ appliance_user }}"
+        group: "{{ appliance_group }}"
         mode: '0644'
       when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
       tags:
@@ -110,8 +110,8 @@
       ansible.builtin.copy:
         src: "/tmp/czertainly-values-default.yaml"
         dest: "/root/install/czertainly-values.yaml"
-        owner: czertainly
-        group: czertainly
+        owner: "{{ appliance_user }}"
+        group: "{{ appliance_group }}"
         mode: '0644'
       tags:
         - czertainly_values
@@ -137,7 +137,7 @@
 
     - name: Check for custom czertainly-values.custom.yaml
       ansible.builtin.stat:
-        path: /home/czertainly/czertainly-values.custom.yaml
+        path: /home/{{ appliance_user }}/czertainly-values.custom.yaml
       register:
         custom_file
       tags:
