@@ -1,4 +1,4 @@
-# defaults file for ansible-role-czertainly
+# defaults file
 appliance_user: ilm
 appliance_group: ilm
 app_namespace: ilm
