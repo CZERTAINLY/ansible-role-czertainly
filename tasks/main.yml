@@ -1,6 +1,6 @@
 ---
 - name: Install ILM
-  tags: czertainly
+  tags: ilm
 
   block:
     - name: Create namespace
@@ -13,7 +13,7 @@
           metadata:
             name: "{{ app_namespace }}"
       tags:
-        - czertainly_namespace
+        - ilm_namespace
 
     # all components are free these days, but keep this here for future reference
     # - name: Verify harbor credentials are defined
@@ -23,7 +23,7 @@
     #       - docker.password is defined
     #     fail_msg: >
     #       "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
-    #   when: czertainly.cryptosenseDiscoveryProvider
+    #   when: ilm.cryptosenseDiscoveryProvider
 
     # in case invalid credentials this fails
     - name: Verify harbor credentials
@@ -38,7 +38,7 @@
       when: (docker.username is defined) and (docker.password is defined)
       register: result
       tags:
-        - czertainly_secret
+        - ilm_secret
 
     # this will always overwrite target file and we are ignoring change
     - name: Create secret for harbor
@@ -51,7 +51,7 @@
       changed_when: false
       when: (docker.username is defined) and (docker.password is defined)
       tags:
-        - czertainly_secret
+        - ilm_secret
 
     # this apply only when changed - there must be more elegant way, but
     # problem with dockerconfigjson is that thre is 2 times base64 encoded
@@ -64,7 +64,7 @@
         src: /root/install/docker-secret.yaml
       when: (docker.username is defined) and (docker.password is defined)
       tags:
-        - czertainly_secret
+        - ilm_secret
 
     - name: Create ingress-tls
       ansible.builtin.template:
@@ -75,7 +75,7 @@
         mode: '0644'
       when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
       tags:
-        - czertainly_ingress_tls
+        - ilm_ingress_tls
 
     - name: Register ingress-tls
       kubernetes.core.k8s:
@@ -84,7 +84,7 @@
         src: "/root/install/ingress-tls.yaml"
       when: (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined)
       tags:
-        - czertainly_ingress_tls
+        - ilm_ingress_tls
 
     - name: Create schema for KeyCloak
       become: true
@@ -94,9 +94,9 @@
         owner: "{{ postgres.username | default('ilmuser') }}"
         database: "{{ postgres.database | default('ilmdb') }}"
       when:
-        (czertainly.keycloak is defined) and czertainly.keycloak
+        (ilm.keycloak is defined) and ilm.keycloak
       tags:
-        - czertainly_keycloak_schema
+        - ilm_keycloak_schema
 
     - name: Check for custom values.custom.yaml
       ansible.builtin.stat:
@@ -104,7 +104,7 @@
       register:
         custom_file
       tags:
-        - czertainly_values
+        - ilm_values
 
     - name: Define value files for helm instalation
       ansible.builtin.set_fact:
@@ -112,16 +112,16 @@
           - '/root/install/values.local.yaml'
           - "{{ custom_file.stat.path | default('/dev/null') }}"
       tags:
-        - czertainly_values
+        - ilm_values
 
-    - name: Install czertainly
+    - name: Install
       kubernetes.core.helm:
         timeout: 20m
         release_namespace: "{{ app_namespace }}"
         release_name: "{{ app_release_name }}"
         chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
-        chart_version: "{{ czertainly.version }}"
+        chart_version: "{{ ilm.version }}"
         wait: true
         values_files: "{{ values_files }}"
       tags:
-        - czertainly_install
+        - ilm_install
