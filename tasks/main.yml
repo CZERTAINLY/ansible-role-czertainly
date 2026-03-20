@@ -12,16 +12,15 @@
       tags:
         - czertainly_namespace
 
-    # components that are not publicaly available / Harbor Credentials are required
-    #   * Cryptosense Discovery Provider
-    - name: Verify harbor credentials are defined
-      ansible.builtin.assert:
-        that:
-          - docker.username is defined
-          - docker.password is defined
-        fail_msg: >
-          "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
-      when: czertainly.cryptosenseDiscoveryProvider
+    # all components are free these days, but keep this here for future reference
+    # - name: Verify harbor credentials are defined
+    #   ansible.builtin.assert:
+    #     that:
+    #       - docker.username is defined
+    #       - docker.password is defined
+    #     fail_msg: >
+    #       "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
+    #   when: czertainly.cryptosenseDiscoveryProvider
 
     # in case invalid credentials this fails
     - name: Verify harbor credentials
@@ -95,45 +94,6 @@
         (czertainly.keycloak is defined) and czertainly.keycloak
       tags:
         - czertainly_keycloak_schema
-
-    - name: Download default values.yaml file
-      ansible.builtin.shell:
-        cmd: >
-          helm show values --version "{{ czertainly.version }}"
-          oci://harbor.3key.company/czertainly-helm/czertainly  > /tmp/czertainly-values-default.yaml
-      changed_when: false
-      tags:
-        - czertainly_values
-        - czertainly_values_default
-
-    - name: Copy default czertainly-values.yaml file
-      ansible.builtin.copy:
-        src: "/tmp/czertainly-values-default.yaml"
-        dest: "/root/install/czertainly-values.yaml"
-        owner: "{{ appliance_user }}"
-        group: "{{ appliance_group }}"
-        mode: '0644'
-      tags:
-        - czertainly_values
-        - czertainly_values_default
-
-    - name: Load default values into memory
-      ansible.builtin.slurp:
-        src: /root/install/czertainly-values.yaml
-      register: default_values
-
-    - name: Interpret default values as yaml
-      ansible.builtin.set_fact:
-        default_values: '{{ default_values.content | b64decode | from_yaml }}'
-
-    - name: Copy local customized czertainly-values.yaml file
-      ansible.builtin.template:
-        src: "czertainly-values.local.yaml.j2"
-        dest: "/root/install/czertainly-values.local.yaml"
-        mode: "0664"
-      tags:
-        - czertainly_values
-        - czertainly_values_local
 
     - name: Check for custom czertainly-values.custom.yaml
       ansible.builtin.stat:
