@@ -1,0 +1,5 @@
+# defaults file
+appliance_user: ilm
+appliance_group: ilm
+app_namespace: ilm
+app_release_name: ilm

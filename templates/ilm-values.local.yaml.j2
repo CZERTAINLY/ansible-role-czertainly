@@ -41,7 +41,7 @@ global:
     certificates: {{ default_values.trusted.certificates | to_nice_json(indent=0) }}
 {% endif %}
   keycloak:
-{% if (czertainly is defined) and (czertainly.keycloak is defined) and czertainly.keycloak %}
+{% if (ilm is defined) and (ilm.keycloak is defined) and ilm.keycloak %}
     enabled: true
     # client secret must be set if keycloak is enabled
     clientSecret: "{{ keycloak_client_secret }}"
@@ -49,7 +49,7 @@ global:
     enabled: false
 {% endif %}
   utils:
-{% if (czertainly is defined) and (czertainly.utilsService is defined) and czertainly.utilsService %}
+{% if (ilm is defined) and (ilm.utilsService is defined) and ilm.utilsService %}
     enabled: true
 {% else %}
     enabled: false
@@ -61,10 +61,10 @@ global:
     password: "newgenerationtrustcare"
     name: "admin"
     surname: "admin"
-    email: "admin@czertainly.local"
+    email: "admin@ilm.local"
 
 # this is needed only for KeyCloak
-{% if (czertainly is defined) and (czertainly.keycloak is defined) and czertainly.keycloak %}
+{% if (ilm is defined) and (ilm.keycloak is defined) and ilm.keycloak %}
 apiGateway:
   hostAliases:
     resolveInternalKeycloak: true
@@ -84,77 +84,77 @@ ingress:
 registerConnectors: true
 
 commonCredentialProvider:
-{% if (czertainly is defined) and (czertainly.commonCredentialProvider is defined) and czertainly.commonCredentialProvider %}
+{% if (ilm is defined) and (ilm.commonCredentialProvider is defined) and ilm.commonCredentialProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 ejbcaNgConnector:
-{% if (czertainly is defined) and (czertainly.ejbcaNgConnector is defined) and czertainly.ejbcaNgConnector %}
+{% if (ilm is defined) and (ilm.ejbcaNgConnector is defined) and ilm.ejbcaNgConnector %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 pyAdcsConnector:
-{% if (czertainly is defined) and (czertainly.pymsAdcsConnector is defined) and czertainly.pymsAdcsConnector %}
+{% if (ilm is defined) and (ilm.pymsAdcsConnector is defined) and ilm.pymsAdcsConnector %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 hashicorpVaultConnector:
-{% if (czertainly is defined) and (czertainly.hashicorpVaultConnector is defined) and czertainly.hashicorpVaultConnector %}
+{% if (ilm is defined) and (ilm.hashicorpVaultConnector is defined) and ilm.hashicorpVaultConnector %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 x509ComplianceProvider:
-{% if (czertainly is defined) and (czertainly.x509ComplianceProvider is defined) and czertainly.x509ComplianceProvider %}
+{% if (ilm is defined) and (ilm.x509ComplianceProvider is defined) and ilm.x509ComplianceProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 cryptosenseDiscoveryProvider:
-{% if (czertainly is defined) and (czertainly.cryptosenseDiscoveryProvider is defined) and czertainly.cryptosenseDiscoveryProvider %}
+{% if (ilm is defined) and (ilm.cryptosenseDiscoveryProvider is defined) and ilm.cryptosenseDiscoveryProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 ctLogsDiscoveryProvider:
-{% if (czertainly is defined) and (czertainly.ctLogsDiscoveryProvider is defined) and czertainly.ctLogsDiscoveryProvider %}
+{% if (ilm is defined) and (ilm.ctLogsDiscoveryProvider is defined) and ilm.ctLogsDiscoveryProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 networkDiscoveryProvider:
-{% if (czertainly is defined) and (czertainly.networkDiscoveryProvider is defined) and czertainly.networkDiscoveryProvider %}
+{% if (ilm is defined) and (ilm.networkDiscoveryProvider is defined) and ilm.networkDiscoveryProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 keystoreEntityProvider:
-{% if (czertainly is defined) and (czertainly.keystoreEntityProvider is defined) and czertainly.keystoreEntityProvider %}
+{% if (ilm is defined) and (ilm.keystoreEntityProvider is defined) and ilm.keystoreEntityProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 softwareCryptographyProvider:
-{% if (czertainly is defined) and (czertainly.softwareCryptographyProvider is defined) and czertainly.softwareCryptographyProvider %}
+{% if (ilm is defined) and (ilm.softwareCryptographyProvider is defined) and ilm.softwareCryptographyProvider %}
   enabled: true
 {% else %}
   enabled: false
 {% endif %}
 
 emailNotificationProvider:
-{% if (czertainly is defined) and (czertainly.emailProvider is defined) and czertainly.emailProvider %}
+{% if (ilm is defined) and (ilm.emailProvider is defined) and ilm.emailProvider %}
   enabled: true
   smtp:
 {% if smtp_host is defined %}
@@ -180,7 +180,7 @@ emailNotificationProvider:
 {% endif %}
 
 webhookNotificationProvider:
-{% if (czertainly is defined) and (czertainly.webhookNotificationProvider is defined) and czertainly.webhookNotificationProvider %}
+{% if (ilm is defined) and (ilm.webhookNotificationProvider is defined) and ilm.webhookNotificationProvider %}
   enabled: true
 {% else %}
   enabled: false
