@@ -92,7 +92,7 @@
       community.postgresql.postgresql_schema:
         name: keycloak
         owner: "{{ postgres.username | default('ilmuser') }}"
-        database: "{{ postgres.database | default('ilmdb') }}"
+        login_db: "{{ postgres.database | default('ilmdb') }}"
       when:
         (ilm.keycloak is defined) and ilm.keycloak
       tags:
