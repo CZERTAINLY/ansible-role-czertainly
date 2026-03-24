@@ -98,6 +98,15 @@
       tags:
         - ilm_keycloak_schema
 
+    - name: Copy local customized values.yaml file
+      ansible.builtin.template:
+        src: "ilm-values.local.yaml.j2"
+        dest: "/root/install/values.local.yaml"
+        mode: "0664"
+      tags:
+        - ilm_values
+        - ilm_values_local
+
     - name: Check for custom values.custom.yaml
       ansible.builtin.stat:
         path: /home/{{ appliance_user }}/values.custom.yaml
