@@ -28,7 +28,7 @@
     # in case invalid credentials this fails
     - name: Verify harbor credentials
       ansible.builtin.uri:
-        url: 'https://harbor.3key.company/api/v2.0/users/current'
+        url: "https://{{ docker.server }}/api/v2.0/users/current"
         user: "{{ docker.username }}"
         password: "{{ docker.password }}"
         method: GET
@@ -128,7 +128,7 @@
         timeout: 20m
         release_namespace: "{{ app_namespace }}"
         release_name: "{{ app_release_name }}"
-        chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
+        chart_ref: "oci://{{ docker.server }}/ilm-helm/ilm"
         chart_version: "{{ ilm.version }}"
         wait: true
         values_files: "{{ values_files }}"
