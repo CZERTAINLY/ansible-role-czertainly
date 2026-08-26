@@ -25,6 +25,37 @@
     #       "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
     #   when: ilm.cryptosenseDiscoveryProvider
 
+    # The chart keeps the CA certificates that the platform trusts in
+    # 'trusted.certificates', but only 'global.trusted.certificates' is
+    # mounted into the pods of the subcharts - without it the auth service
+    # validates a client certificate against the stock CA bundle of its image
+    # and rejects every one of them with "unable to get local issuer
+    # certificate". Read the defaults of the chart that is about to be
+    # installed, so that ilm-values.local.yaml can carry them over to the
+    # global key. An operator provided trustedCA_file wins over this.
+    - name: Read the default values of the chart
+      ansible.builtin.command:
+        cmd: >-
+          helm show values oci://{{ docker.server }}/ilm-helm/ilm
+          --version {{ ilm.version }}
+      register: chart_values
+      changed_when: false
+      tags:
+        - ilm_values
+
+    - name: Make the chart defaults available to the values template
+      ansible.builtin.set_fact:
+        default_values: "{{ chart_values.stdout | from_yaml }}"
+      tags:
+        - ilm_values
+
+    - name: Configure traefik for client certificate login
+      ansible.builtin.include_tasks:
+        file: traefik.yml
+      when: ilm_ingress_class == 'traefik'
+      tags:
+        - ilm_traefik
+
     # in case invalid credentials this fails
     - name: Verify harbor credentials
       ansible.builtin.uri:

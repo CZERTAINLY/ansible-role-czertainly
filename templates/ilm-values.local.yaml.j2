@@ -74,11 +74,30 @@ apiGateway:
 hostName: "{{ ansible_fqdn }}"
 ingress:
   enabled: true
+  class: {{ ilm_ingress_class }}
   certificate:
 {% if (ingress is defined) and (ingress.certificate_file is defined) and (ingress.private_key_file is defined) %}
     source: external
 {% else %}
     source: internal
+{% endif %}
+{% if ilm_ingress_class == 'traefik' %}
+  # The chart annotates the Ingress for ingress-nginx, traefik ignores all of
+  # that and is configured through these instead. The names are
+  # "<namespace>-<resource>@kubernetescrd", the resources themselves are in
+  # traefik-ingress.yaml. cert-header-encode has to come after
+  # pass-client-cert, it encodes the header the other one writes.
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.options: "{{ app_namespace }}-ilm-mtls@kubernetescrd"
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ app_namespace }}-pass-client-cert@kubernetescrd,{{ app_namespace }}-cert-header-encode@kubernetescrd"
+
+# Which header core reads the client certificate from. The chart default is
+# the ssl-client-cert of ingress-nginx, traefik's passTLSClientCert writes
+# this one.
+auth:
+  header:
+    certificate: "X-Forwarded-Tls-Client-Cert"
 {% endif %}
 
 registerConnectors: true

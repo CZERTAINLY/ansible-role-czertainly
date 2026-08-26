@@ -3,3 +3,21 @@ appliance_user: ilm
 appliance_group: ilm
 app_namespace: ilm
 app_release_name: ilm
+
+# Which ingress controller serves ILM. 'traefik' is what RKE2 deploys by
+# default since v1.36 and needs the middlewares and the plugin of traefik.yml
+# to get client certificate login working. 'nginx' is what the chart is
+# written for, it needs none of that - the annotations the chart sets are
+# already the ingress-nginx ones.
+ilm_ingress_class: traefik
+
+# The traefik plugin that percent-encodes the client certificate header. It is
+# loaded as a local plugin, so nothing is ever fetched from the module path -
+# it only names the plugin and the directory the source is mounted into, and
+# points at the repository the source in files/certheaderencode lives in.
+#
+# The last element of the module path has to stay equal to the name of the Go
+# package, traefik resolves the plugin as <last element>.New and refuses to
+# load it with "undefined: <last element>" when the two differ.
+ilm_traefik_plugin_name: certheaderencode
+ilm_traefik_plugin_module: github.com/semik/ansible-role-ilm/certheaderencode

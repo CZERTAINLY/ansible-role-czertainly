@@ -1,0 +1,79 @@
+---
+# Client certificate login through Traefik. RKE2 deploys Traefik as its
+# default ingress controller since v1.36, while the chart is written for
+# ingress-nginx: its Ingress carries nginx.ingress.kubernetes.io/auth-tls-*
+# annotations, and core expects the certificate in the header the way
+# ingress-nginx writes it with $ssl_client_escaped_cert, percent-encoded.
+#
+# Traefik's passTLSClientCert writes plain base64 instead, and core URL-decodes
+# the header before decoding the base64, so every '+' of the base64 arrives as
+# a space and authentication fails with "Invalid certificate header: Illegal
+# base64 character 20". Traefik has no option to encode the value, hence the
+# plugin below.
+- name: Create the traefik plugin configuration
+  ansible.builtin.template:
+    src: traefik-plugin.yaml.j2
+    dest: /root/install/traefik-plugin.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - ilm_traefik
+    - ilm_traefik_plugin
+
+- name: Register the traefik plugin
+  kubernetes.core.k8s:
+    state: present
+    src: /root/install/traefik-plugin.yaml
+  when: not ansible_check_mode
+  tags:
+    - ilm_traefik
+    - ilm_traefik_plugin
+
+# helm-controller notices the HelmChartConfig and upgrades the rke2-traefik
+# release, which rolls the daemonset. Waiting for the argument to appear and
+# the rollout to finish keeps the middleware below from being applied while
+# Traefik still runs without the plugin, which it would answer with
+# "unknown plugin type" until the next reload.
+- name: Wait until traefik runs with the plugin
+  kubernetes.core.k8s_info:
+    kind: DaemonSet
+    namespace: kube-system
+    name: rke2-traefik
+  register: traefik_daemonset
+  until: >-
+    (traefik_daemonset.resources | length > 0)
+    and (('--experimental.localPlugins.' ~ ilm_traefik_plugin_name ~ '.moduleName=' ~ ilm_traefik_plugin_module)
+         in (traefik_daemonset.resources[0].spec.template.spec.containers[0].args | default([])))
+    and (traefik_daemonset.resources[0].status.desiredNumberScheduled | default(0) > 0)
+    and (traefik_daemonset.resources[0].status.numberReady | default(0)
+         == traefik_daemonset.resources[0].status.desiredNumberScheduled)
+    and (traefik_daemonset.resources[0].status.updatedNumberScheduled | default(0)
+         == traefik_daemonset.resources[0].status.desiredNumberScheduled)
+  retries: 60
+  delay: 10
+  when: not ansible_check_mode
+  tags:
+    - ilm_traefik
+    - ilm_traefik_plugin
+
+- name: Create the traefik ingress configuration
+  ansible.builtin.template:
+    src: traefik-ingress.yaml.j2
+    dest: /root/install/traefik-ingress.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - ilm_traefik
+    - ilm_traefik_ingress
+
+- name: Register the traefik ingress configuration
+  kubernetes.core.k8s:
+    namespace: "{{ app_namespace }}"
+    state: present
+    src: /root/install/traefik-ingress.yaml
+  when: not ansible_check_mode
+  tags:
+    - ilm_traefik
+    - ilm_traefik_ingress
