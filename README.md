@@ -14,9 +14,69 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
 | `app_namespace` | `ilm` |
 | `app_release_name` | `ilm` |
 | `appliance_user` / `appliance_group` | `ilm` |
+| `ilm_private_components` | the components pulled from `ilm-private` |
 | `ilm_ingress_class` | `traefik` |
 | `ilm_traefik_plugin_name` | `certheaderencode` |
 | `ilm_traefik_plugin_module` | `github.com/semik/ansible-role-ilm/certheaderencode` |
+| `ilm_cbom_release_name` | `cbom-repository` |
+| `ilm_cbom_repository_version` | `1.1.0` |
+| `ilm_cbom_data_dir` | `/var/lib/ilm/cbom-repo` |
+| `ilm_cbom_data_owner` | `1000`, the uid minio runs as |
+| `ilm_cbom_storage_size` | `10Gi` |
+| `ilm_cbom_bucket` | `cbom-repo` |
+| `ilm_cbom_console` | `false` |
+
+## Components
+
+Which components are installed comes from the `ilm` dict of
+`/etc/ilm-ansible/vars/ilm.yml`, which the appliance TUI writes. Every key is
+optional, a missing one means the component is not installed.
+
+The components listed in `ilm_private_components` come from the `ilm-private`
+repository of the registry, unlike every other one, so they only pull once
+`docker.username` and `docker.password` are configured in
+`/etc/ilm-ansible/vars/docker.yml`. They are shipped switched off for that
+reason, and enabling one without credentials fails the play before anything is
+installed - otherwise their pods would only reach `ImagePullBackOff`. The
+appliance TUI marks the same components with an asterisk, reading this very
+list, so a component becomes private in one place.
+
+## CBOM repository
+
+`cbomRepository` is not a component of the ilm chart, it has a chart and a
+version of its own, so the role installs it as a second release into the same
+namespace, see [tasks/cbom-repository.yml](tasks/cbom-repository.yml).
+
+Its CBOMs live in an object store - the bundled minio - and not in the
+database that everything else on the appliance is rebuilt from. Volumes of the
+default storage class are provisioned under `/opt/local-path-provisioner` with
+a name derived from the claim, so a wipe of RKE2 would orphan them and the
+data would be gone from the point of view of the new cluster. The role
+therefore creates a `PersistentVolume` bound to `ilm_cbom_data_dir` on the
+host with `persistentVolumeReclaimPolicy: Retain`, and hands minio the claim
+of it through `minio.persistence.existingClaim`. After
+`rke2-uninstall.sh` and another run of the playbook the volume is recreated
+over the same directory and the CBOMs are still there - as are the storage
+credentials, generated once into `/etc/ilm-ansible/vars/cbom.yml`.
+
+So the backup of the CBOMs is a copy of `ilm_cbom_data_dir`, the way the
+backup of everything else is a dump of the database.
+
+Reinstalling ILM deletes the namespace and with it the claim, while `Retain`
+keeps the volume - as `Released`, still carrying the uid of the claim that is
+gone. A new claim of the same name is refused with `volume already bound to a
+different claim` and minio waits for a volume that never binds, so the role
+drops that reference before it recreates the claim. Nothing has to be done by
+hand after a reinstall.
+
+Switching the component off removes the release but leaves the volume, the
+claim and the directory alone, so switching it on again picks the CBOMs back
+up. Removing the data is deliberate and manual:
+
+```
+kubectl delete pvc/cbom-repository-data pv/cbom-repository-data -n ilm
+rm -rf /var/lib/ilm/cbom-repo
+```
 
 ## Client certificate login
 

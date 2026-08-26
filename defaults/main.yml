@@ -4,6 +4,35 @@ appliance_group: ilm
 app_namespace: ilm
 app_release_name: ilm
 
+# Components whose images come from the private repository of the registry,
+# ilm-private, and not from the public one everything else is pulled from.
+# They need docker.username and docker.password of vars/docker.yml: without
+# them the install is refused by tasks/main.yml, and their pods would only
+# reach ImagePullBackOff. ilm-tui marks them with an asterisk out of this very
+# list, so a component becomes private in one place, here.
+ilm_private_components:
+  - cryptosenseDiscoveryProvider
+  - externalAuthorityProvider
+  - otpkiConnector
+  - timestampFormattingConnector
+
+# The CBOM repository, installed as a release of its own when
+# ilm.cbomRepository is set - it is not a part of the ilm chart. Its data lives
+# in an object store, not in the database, so it is kept in a directory of the
+# host and handed to the release through a PersistentVolume of its own.
+# Everything else on the appliance is rebuilt from the database, this one is
+# rebuilt from that directory, see the README.
+ilm_cbom_release_name: cbom-repository
+ilm_cbom_repository_version: "1.1.0"
+ilm_cbom_data_dir: /var/lib/ilm/cbom-repo
+# The uid the minio container runs as, it has to own the directory above.
+ilm_cbom_data_owner: "1000"
+ilm_cbom_storage_size: 10Gi
+ilm_cbom_bucket: cbom-repo
+# The minio console has no ingress on the appliance, so there is nothing to
+# reach it with.
+ilm_cbom_console: false
+
 # Which ingress controller serves ILM. 'traefik' is what RKE2 deploys by
 # default since v1.36 and needs the middlewares and the plugin of traefik.yml
 # to get client certificate login working. 'nginx' is what the chart is

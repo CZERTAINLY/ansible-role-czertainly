@@ -116,8 +116,22 @@ ejbcaNgConnector:
   enabled: false
 {% endif %}
 
+externalAuthorityProvider:
+{% if (ilm is defined) and (ilm.externalAuthorityProvider is defined) and ilm.externalAuthorityProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
 pyAdcsConnector:
 {% if (ilm is defined) and (ilm.pymsAdcsConnector is defined) and ilm.pymsAdcsConnector %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+otpkiConnector:
+{% if (ilm is defined) and (ilm.otpkiConnector is defined) and ilm.otpkiConnector %}
   enabled: true
 {% else %}
   enabled: false
@@ -200,6 +214,13 @@ emailNotificationProvider:
 
 webhookNotificationProvider:
 {% if (ilm is defined) and (ilm.webhookNotificationProvider is defined) and ilm.webhookNotificationProvider %}
+  enabled: true
+{% else %}
+  enabled: false
+{% endif %}
+
+timestampFormattingConnector:
+{% if (ilm is defined) and (ilm.timestampFormattingConnector is defined) and ilm.timestampFormattingConnector %}
   enabled: true
 {% else %}
   enabled: false

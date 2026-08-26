@@ -15,15 +15,29 @@
       tags:
         - ilm_namespace
 
-    # all components are free these days, but keep this here for future reference
-    # - name: Verify harbor credentials are defined
-    #   ansible.builtin.assert:
-    #     that:
-    #       - docker.username is defined
-    #       - docker.password is defined
-    #     fail_msg: >
-    #       "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
-    #   when: ilm.cryptosenseDiscoveryProvider
+    # Not every component is free: the ones of ilm_private_components are
+    # pulled from the private repository of the registry. The task below
+    # verifies credentials that are configured, this one is about credentials
+    # that are missing - without it the install runs through and leaves those
+    # pods in ImagePullBackOff.
+    - name: Verify credentials for components from the private repository
+      ansible.builtin.assert:
+        that:
+          - docker.username is defined
+          - docker.password is defined
+        fail_msg: >-
+          {{ private_enabled | join(', ') }} need images from
+          {{ docker.server }}/ilm-private, set username and password or switch the components off.
+      vars:
+        # 'version' is a string, so comparing to true keeps it out of this.
+        enabled_components: >-
+          {{ ilm | dict2items | selectattr('value', 'equalto', true)
+             | map(attribute='key') | list }}
+        private_enabled: >-
+          {{ ilm_private_components | select('in', enabled_components) | list }}
+      when: private_enabled | length > 0
+      tags:
+        - ilm_secret
 
     # The chart keeps the CA certificates that the platform trusts in
     # 'trusted.certificates', but only 'global.trusted.certificates' is
@@ -42,12 +56,14 @@
       changed_when: false
       tags:
         - ilm_values
+        - ilm_cbom
 
     - name: Make the chart defaults available to the values template
       ansible.builtin.set_fact:
         default_values: "{{ chart_values.stdout | from_yaml }}"
       tags:
         - ilm_values
+        - ilm_cbom
 
     - name: Configure traefik for client certificate login
       ansible.builtin.include_tasks:
@@ -165,3 +181,25 @@
         values_files: "{{ values_files }}"
       tags:
         - ilm_install
+
+    - name: Install the cbom repository
+      ansible.builtin.include_tasks:
+        file: cbom-repository.yml
+      when: ilm.cbomRepository | default(false)
+      tags:
+        - ilm_cbom
+
+    # Switching the component off removes the release, the same way unticking
+    # any other component removes it from the ilm release. The volume, the
+    # claim and the data directory are left alone, so switching it on again
+    # picks the CBOMs back up.
+    - name: Remove the cbom repository
+      kubernetes.core.helm:
+        release_namespace: "{{ app_namespace }}"
+        release_name: "{{ ilm_cbom_release_name }}"
+        state: absent
+      when:
+        - not ansible_check_mode
+        - not (ilm.cbomRepository | default(false))
+      tags:
+        - ilm_cbom

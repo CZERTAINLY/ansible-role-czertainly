@@ -1,0 +1,46 @@
+# {{ ansible_managed }}
+#
+# Storage of the CBOM repository. The appliance rebuilds everything from the
+# database, and a wipe of RKE2 takes the volumes of the default storage class
+# with it, so this one is bound to a directory of the host instead: after
+# "rke2-uninstall.sh" and a new run of the playbook the volume below is
+# recreated over the same directory and the CBOMs are still there.
+#
+# Retain, so that deleting the claim never deletes the data, and an empty
+# storageClassName on both sides so that local-path doesn't provision
+# something else underneath.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ ilm_cbom_release_name }}-data
+spec:
+  capacity:
+    storage: {{ ilm_cbom_storage_size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: {{ ilm_cbom_data_dir }}
+    type: Directory
+  # Named explicitly, so the volume can only ever be bound by the claim below.
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    namespace: {{ app_namespace }}
+    name: {{ ilm_cbom_release_name }}-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ ilm_cbom_release_name }}-data
+  namespace: {{ app_namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: {{ ilm_cbom_release_name }}-data
+  resources:
+    requests:
+      storage: {{ ilm_cbom_storage_size }}

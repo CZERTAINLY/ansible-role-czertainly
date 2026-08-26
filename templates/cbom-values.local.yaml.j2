@@ -1,0 +1,56 @@
+# {{ ansible_managed }}
+#
+# The certificates the platform trusts, resolved to one value first: 'global'
+# must not end up empty, the chart indexes into it and an empty key is null,
+# not a map.
+{% if trustedCA_file is defined %}
+{% set trusted_certificates = lookup('ansible.builtin.file', trustedCA_file) %}
+{% elif (default_values is defined) and (default_values.global.trusted.certificates | default('') | length > 0) %}
+{% set trusted_certificates = default_values.global.trusted.certificates %}
+{% elif (default_values is defined) and (default_values.trusted.certificates | default('') | length > 0) %}
+{% set trusted_certificates = default_values.trusted.certificates %}
+{% else %}
+{% set trusted_certificates = '' %}
+{% endif %}
+---
+global:
+  trusted:
+    certificates: {{ trusted_certificates | to_nice_json(indent=0) }}
+{% if docker.username is defined and docker.password is defined %}
+  image:
+     pullSecrets:
+      - {{ docker.secret }}
+  imagePullSecrets:
+    - name: "{{ docker.secret }}"
+{% endif %}
+{% if proxy is defined %}
+{% if proxy.http is defined %}
+  httpProxy: {{ proxy.http }}
+{% endif %}
+{% if proxy.http is defined %}
+  httpsProxy: {{ proxy.https }}
+{% endif %}
+{% if proxy.dont_use_for is defined %}
+  noProxy: "{{ proxy.dont_use_for | join(', ') }}"
+{% endif %}
+{% endif %}
+
+# Where the CBOMs are stored. The credentials are the ones minio is started
+# with below - the same pair, the service authenticates with them.
+cbomRepo:
+  endpoint: "http://minio-service:9000"
+  bucket: "{{ ilm_cbom_bucket }}"
+  accessKey: "{{ cbom_minio_access_key }}"
+  secretKey: "{{ cbom_minio_secret_key }}"
+
+minio:
+  enabled: true
+  rootUser: "{{ cbom_minio_access_key }}"
+  rootPassword: "{{ cbom_minio_secret_key }}"
+  console:
+    enabled: {{ ilm_cbom_console | bool | lower }}
+  # The claim of cbom-storage.yaml, bound to a directory of the host, so that
+  # the data outlives the cluster.
+  persistence:
+    enabled: true
+    existingClaim: "{{ ilm_cbom_release_name }}-data"
