@@ -1,6 +1,6 @@
 displayName: Certificate header encode
 type: middleware
-import: github.com/semik/ansible-role-ilm/certheaderencode
+import: github.com/OmniTrustILM/ansible-role-ilm/certheaderencode
 summary: Percent-encodes the client certificate header, so that a consumer which URL-decodes it gets the certificate back unharmed.
 testData:
   header: X-Forwarded-Tls-Client-Cert

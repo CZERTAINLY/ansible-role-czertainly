@@ -17,7 +17,7 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
 | `ilm_private_components` | the components pulled from `ilm-private` |
 | `ilm_ingress_class` | `traefik` |
 | `ilm_traefik_plugin_name` | `certheaderencode` |
-| `ilm_traefik_plugin_module` | `github.com/semik/ansible-role-ilm/certheaderencode` |
+| `ilm_traefik_plugin_module` | `github.com/OmniTrustILM/ansible-role-ilm/certheaderencode` |
 | `ilm_cbom_release_name` | `cbom-repository` |
 | `ilm_cbom_repository_version` | `1.1.0` |
 | `ilm_cbom_data_dir` | `/var/lib/ilm/cbom-repo` |

@@ -49,4 +49,4 @@ ilm_ingress_class: traefik
 # package, traefik resolves the plugin as <last element>.New and refuses to
 # load it with "undefined: <last element>" when the two differ.
 ilm_traefik_plugin_name: certheaderencode
-ilm_traefik_plugin_module: github.com/semik/ansible-role-ilm/certheaderencode
+ilm_traefik_plugin_module: github.com/OmniTrustILM/ansible-role-ilm/certheaderencode
