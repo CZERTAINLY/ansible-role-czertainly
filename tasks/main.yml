@@ -57,6 +57,7 @@
       tags:
         - ilm_values
         - ilm_cbom
+        - ilm_install
 
     - name: Make the chart defaults available to the values template
       ansible.builtin.set_fact:
@@ -64,13 +65,18 @@
       tags:
         - ilm_values
         - ilm_cbom
+        - ilm_install
 
     - name: Configure traefik for client certificate login
       ansible.builtin.include_tasks:
         file: traefik.yml
       when: ilm_ingress_class == 'traefik'
+      # The tags of the included tasks have to be repeated here, an include
+      # only runs when the include itself matches the tag.
       tags:
         - ilm_traefik
+        - ilm_traefik_plugin
+        - ilm_traefik_ingress
 
     # in case invalid credentials this fails
     - name: Verify harbor credentials
@@ -153,6 +159,7 @@
       tags:
         - ilm_values
         - ilm_values_local
+        - ilm_install
 
     - name: Check for custom values.custom.yaml
       ansible.builtin.stat:
@@ -161,6 +168,7 @@
         custom_file
       tags:
         - ilm_values
+        - ilm_install
 
     - name: Define value files for helm instalation
       ansible.builtin.set_fact:
@@ -169,6 +177,7 @@
           - "{{ custom_file.stat.path | default('/dev/null') }}"
       tags:
         - ilm_values
+        - ilm_install
 
     - name: Install
       kubernetes.core.helm:

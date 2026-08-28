@@ -15,6 +15,7 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
 | `app_release_name` | `ilm` |
 | `appliance_user` / `appliance_group` | `ilm` |
 | `ilm_private_components` | the components pulled from `ilm-private` |
+| `ilm_db_wait_seconds` | `300` |
 | `ilm_ingress_class` | `traefik` |
 | `ilm_traefik_plugin_name` | `certheaderencode` |
 | `ilm_traefik_plugin_module` | `github.com/OmniTrustILM/ansible-role-ilm/certheaderencode` |
@@ -40,6 +41,34 @@ reason, and enabling one without credentials fails the play before anything is
 installed - otherwise their pods would only reach `ImagePullBackOff`. The
 appliance TUI marks the same components with an asterisk, reading this very
 list, so a component becomes private in one place.
+
+## Waiting for the database
+
+Helm starts every pod at once, while pg-bouncer - which all of them reach the
+database through - takes about as long as its image pull to come up. The
+components that talk to the database while starting die in the meantime and
+are restarted until it answers: `auth` restarted three times and
+`cryptosense-discovery-provider` once on a measured install, with
+`Failed to connect to <pg-bouncer>:5432, Connection refused` in their logs.
+
+The role therefore renders a `wait-for-database` init container into the
+values of every component that uses the database, in the style the chart uses
+for its own `wait-for-auth-service` and `wait-for-messaging-service`: the
+`curl` image of the chart running `nc -z` in a loop. Custom init containers
+are appended to the ones the chart brings itself, so core keeps waiting for
+the auth service and scheduler-service for the messaging service.
+
+The image and the endpoint come from the defaults of the chart being
+installed, not from anything written down here, so they cannot go stale.
+`ilm_db_wait_seconds` bounds the wait; on timeout the container exits with a
+message in `kubectl logs <pod> -c wait-for-database` and the kubelet retries
+it.
+
+Components that do not use the database - the api gateway, the frontend, the
+OPA policies, both message brokers, the utils service, `x509ComplianceProvider`,
+`otpkiConnector` and `timestampFormattingConnector` - are deliberately left
+alone, and so is pg-bouncer itself, which would otherwise wait for the service
+it is.
 
 ## CBOM repository
 

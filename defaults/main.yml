@@ -4,6 +4,13 @@ appliance_group: ilm
 app_namespace: ilm
 app_release_name: ilm
 
+# How long a component waits for the database before the init container of
+# ilm-values.local.yaml gives up and is retried by the kubelet. Everything
+# reaches the database through pg-bouncer, which needs about as long as its
+# image pull to come up - 101 seconds when this was measured - so the budget
+# is deliberately generous.
+ilm_db_wait_seconds: 300
+
 # Components whose images come from the private repository of the registry,
 # ilm-private, and not from the public one everything else is pulled from.
 # They need docker.username and docker.password of vars/docker.yml: without

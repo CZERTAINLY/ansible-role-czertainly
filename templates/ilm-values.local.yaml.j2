@@ -1,5 +1,53 @@
 # {{ ansible_managed }}
+#
+# Everything below that reaches the database gets an init container waiting
+# for it. Helm starts all pods at once, while pg-bouncer - which every
+# component connects through - needs about as long as its image pull to come
+# up, and the components that talk to the database while starting die in the
+# meantime and are restarted until it answers.
+#
+# The image and the endpoint are taken from the defaults of the chart itself,
+# so that neither goes stale when the chart moves them. The chart uses the
+# same image and the same 'nc' loop for its own waits, see the
+# wait-for-auth-service of core.
+{% set curl_image = default_values.curl.image %}
+{% set wait_image = curl_image.registry ~ '/' ~ curl_image.repository ~ '/' ~ curl_image.name ~ ':' ~ curl_image.tag %}
+{% if default_values.global.database.pgBouncer.enabled | default(true) %}
+{% set wait_host = default_values.global.database.pgBouncer.host %}
+{% set wait_port = default_values.global.database.pgBouncer.port %}
+{% else %}
+{% set wait_host = ansible_default_ipv4.address %}
+{% set wait_port = 5432 %}
+{% endif %}
+#
+# The macro renders at the left margin, a component nests it with indent(2).
+{% macro wait_for_database() -%}
+initContainers:
+  - name: wait-for-database
+    image: "{{ wait_image }}"
+    imagePullPolicy: IfNotPresent
+    securityContext:
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        deadline=$(( $(date +%s) + {{ ilm_db_wait_seconds }} ))
+        while ! nc -z -w 2 {{ wait_host }} {{ wait_port }}; do
+          if [ "$(date +%s)" -ge "$deadline" ]; then
+            echo "Timed out after {{ ilm_db_wait_seconds }}s waiting for {{ wait_host }}:{{ wait_port }}"
+            exit 1
+          fi
+          sleep 1
+        done
+        echo "database seems to be started"
+{%- endmacro %}
 ---
+# core is the deployment of the chart itself, so its init containers are read
+# from the values root.
+{{ wait_for_database() }}
+
 global:
 {% if docker.username is defined and docker.password is defined %}
   image:
@@ -102,9 +150,23 @@ auth:
 
 registerConnectors: true
 
+# The three components below are always installed - except keycloak - and
+# have nothing to enable here, they only need the wait.
+authService:
+{{ wait_for_database() | indent(2, True) }}
+
+schedulerService:
+{{ wait_for_database() | indent(2, True) }}
+
+{% if (ilm is defined) and (ilm.keycloak is defined) and ilm.keycloak %}
+keycloakInternal:
+{{ wait_for_database() | indent(2, True) }}
+
+{% endif %}
 commonCredentialProvider:
 {% if (ilm is defined) and (ilm.commonCredentialProvider is defined) and ilm.commonCredentialProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -112,6 +174,7 @@ commonCredentialProvider:
 ejbcaNgConnector:
 {% if (ilm is defined) and (ilm.ejbcaNgConnector is defined) and ilm.ejbcaNgConnector %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -119,6 +182,7 @@ ejbcaNgConnector:
 externalAuthorityProvider:
 {% if (ilm is defined) and (ilm.externalAuthorityProvider is defined) and ilm.externalAuthorityProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -126,6 +190,7 @@ externalAuthorityProvider:
 pyAdcsConnector:
 {% if (ilm is defined) and (ilm.pymsAdcsConnector is defined) and ilm.pymsAdcsConnector %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -140,6 +205,7 @@ otpkiConnector:
 hashicorpVaultConnector:
 {% if (ilm is defined) and (ilm.hashicorpVaultConnector is defined) and ilm.hashicorpVaultConnector %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -154,6 +220,7 @@ x509ComplianceProvider:
 cryptosenseDiscoveryProvider:
 {% if (ilm is defined) and (ilm.cryptosenseDiscoveryProvider is defined) and ilm.cryptosenseDiscoveryProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -161,6 +228,7 @@ cryptosenseDiscoveryProvider:
 ctLogsDiscoveryProvider:
 {% if (ilm is defined) and (ilm.ctLogsDiscoveryProvider is defined) and ilm.ctLogsDiscoveryProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -168,6 +236,7 @@ ctLogsDiscoveryProvider:
 networkDiscoveryProvider:
 {% if (ilm is defined) and (ilm.networkDiscoveryProvider is defined) and ilm.networkDiscoveryProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -175,6 +244,7 @@ networkDiscoveryProvider:
 keystoreEntityProvider:
 {% if (ilm is defined) and (ilm.keystoreEntityProvider is defined) and ilm.keystoreEntityProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -182,6 +252,7 @@ keystoreEntityProvider:
 softwareCryptographyProvider:
 {% if (ilm is defined) and (ilm.softwareCryptographyProvider is defined) and ilm.softwareCryptographyProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
@@ -189,6 +260,7 @@ softwareCryptographyProvider:
 emailNotificationProvider:
 {% if (ilm is defined) and (ilm.emailProvider is defined) and ilm.emailProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
   smtp:
 {% if smtp_host is defined %}
     host: {{ smtp_host }}
@@ -215,6 +287,7 @@ emailNotificationProvider:
 webhookNotificationProvider:
 {% if (ilm is defined) and (ilm.webhookNotificationProvider is defined) and ilm.webhookNotificationProvider %}
   enabled: true
+{{ wait_for_database() | indent(2, True) }}
 {% else %}
   enabled: false
 {% endif %}
