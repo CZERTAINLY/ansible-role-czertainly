@@ -23,6 +23,16 @@ ilm_private_components:
   - otpkiConnector
   - timestampFormattingConnector
 
+# Whether the mail server of vars/email.yml is contacted before helm runs.
+# The email notification provider starts with spring.mail.test-connection, so
+# it connects and authenticates while its context comes up and dies when that
+# fails - a wrong host or password ends in CrashLoopBackOff and a 20 minute
+# helm timeout that says nothing about mail. Set this to false to install
+# anyway, e.g. while the mail server is down; the settings are still checked
+# for being present.
+ilm_smtp_check: true
+ilm_smtp_check_timeout: 10
+
 # The CBOM repository, installed as a release of its own when
 # ilm.cbomRepository is set - it is not a part of the ilm chart. Its data lives
 # in an object store, not in the database, so it is kept in a directory of the

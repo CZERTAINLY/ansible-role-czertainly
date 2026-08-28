@@ -16,6 +16,8 @@ A Linux system with access to the Internet and configured Kubernetes cluster wit
 | `appliance_user` / `appliance_group` | `ilm` |
 | `ilm_private_components` | the components pulled from `ilm-private` |
 | `ilm_db_wait_seconds` | `300` |
+| `ilm_smtp_check` | `true` |
+| `ilm_smtp_check_timeout` | `10` |
 | `ilm_ingress_class` | `traefik` |
 | `ilm_traefik_plugin_name` | `certheaderencode` |
 | `ilm_traefik_plugin_module` | `github.com/OmniTrustILM/ansible-role-ilm/certheaderencode` |
@@ -69,6 +71,61 @@ OPA policies, both message brokers, the utils service, `x509ComplianceProvider`,
 `otpkiConnector` and `timestampFormattingConnector` - are deliberately left
 alone, and so is pg-bouncer itself, which would otherwise wait for the service
 it is.
+
+## Mail server
+
+`emailProvider` is the one component that cannot be installed on its own. Its
+image starts spring boot with
+
+```yaml
+spring:
+  mail:
+    host: ${SMTP_HOST}
+    ...
+    test-connection: true
+```
+
+so it contacts the mail server and authenticates while its context comes up,
+and `SMTP_HOST` has no default. Settings that are missing or wrong therefore do
+not degrade a feature, they kill the container: the pod ends in
+`CrashLoopBackOff` and the `Install` task sits out its 20 minute timeout before
+reporting something that never mentions mail.
+
+The role does that exchange first, out of the `smtp_*` variables of
+`/etc/ilm-ansible/vars/email.yml`, in `Verify the mail server settings` and
+`Verify the mail server accepts the settings`. Both run only when
+`ilm.emailProvider` is set, and they run before anything is installed, so a
+mail server that refuses the credentials is reported in a second, in the words
+of the mail server:
+
+```
+vps.example.com:587 rejected the credentials of ilm: 535 5.7.8 Error: authentication failed
+```
+
+Set `ilm_smtp_check` to false to install while the mail server is unreachable -
+the settings are still checked for being present.
+
+The check is [files/smtp-check.py](files/smtp-check.py), installed as
+`ilm-smtp-check` on the appliance, and it is meant to be run by hand as well:
+
+```
+ilm-smtp-check --host mail.example.com --port 587 --user ilm -v
+```
+
+`-v` prints the conversation with the credentials taken out, `--send-to`
+delivers a test message, and the exit code says what went wrong - 2 connection,
+3 TLS, 4 authentication. Nothing is sent without `--send-to`.
+
+Two of its choices are there to match what the provider does rather than to be
+strict about SMTP. STARTTLS is offered but not required, because the provider
+sets `mail.smtp.starttls.enable` and not `starttls.required`, so it upgrades
+only when the server advertises it - the check warns instead of failing. The
+certificate on the other hand is verified, because jakarta mail verifies it
+too; `trustedCA_file` is passed along, so the check trusts what the pods trust.
+
+The appliance TUI runs the same command when the SMTP screen is left and
+before it lets `email Provider` be switched on, so what is accepted there
+installs here.
 
 ## CBOM repository
 

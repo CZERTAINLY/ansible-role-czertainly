@@ -39,6 +39,65 @@
       tags:
         - ilm_secret
 
+    # The email notification provider is started by spring boot with
+    # 'spring.mail.test-connection: true', so it connects to the mail server
+    # and authenticates while its context comes up, and its image has no
+    # default for SMTP_HOST. Settings that are missing or wrong therefore kill
+    # the container instead of degrading a feature: the pod ends in
+    # CrashLoopBackOff and the install below sits out its 20 minute timeout
+    # before reporting something that never mentions mail. The two tasks below
+    # do the same exchange first.
+    - name: Verify the mail server settings
+      ansible.builtin.assert:
+        that:
+          - smtp_host | default('') | length > 0
+          - smtp_host | default('') != 'mail.example.com'
+          - (smtp_username | default('') | length == 0) or (smtp_password | default('') | length > 0)
+        fail_msg: >-
+          emailProvider is enabled, so a mail server has to be configured in
+          the Mail screen of ilm-tui or in /etc/ilm-ansible/vars/email.yml -
+          smtp_host is required and smtp_password goes with smtp_username.
+      when: ilm.emailProvider | default(false)
+      tags:
+        - ilm_smtp
+
+    - name: Verify the mail server accepts the settings
+      ansible.builtin.command:
+        argv: "{{ smtp_check_argv }}"
+      vars:
+        # The password is handed over in the environment, so that it stays out
+        # of the process list and out of the arguments ansible prints.
+        smtp_check_argv: >-
+          {{ [role_path ~ '/files/smtp-check.py',
+              '--host', smtp_host | string,
+              '--port', smtp_port | default(587) | string,
+              '--timeout', ilm_smtp_check_timeout | string]
+             + (['--tls'] if smtp_tls | default(true) | bool else ['--no-tls'])
+             + (['--user', smtp_username | string] if smtp_username | default('') | length > 0 else [])
+             + (['--ca-file', trustedCA_file] if trustedCA_file is defined else []) }}
+      environment:
+        SMTP_PASSWORD: "{{ smtp_password | default('') }}"
+      changed_when: false
+      # The reason is on stderr and is the point of the task, so it is
+      # reported by the task below instead of as 'non-zero return code'.
+      failed_when: false
+      register: smtp_check
+      when:
+        - ilm.emailProvider | default(false)
+        - ilm_smtp_check | bool
+      tags:
+        - ilm_smtp
+
+    - name: Report what the mail server answered
+      ansible.builtin.fail:
+        msg: >-
+          {{ smtp_check.stderr | default('') | trim }} - correct the settings
+          in the Mail screen of ilm-tui, switch emailProvider off, or set
+          ilm_smtp_check to false to install without this check.
+      when: smtp_check.rc | default(0) != 0
+      tags:
+        - ilm_smtp
+
     # The chart keeps the CA certificates that the platform trusts in
     # 'trusted.certificates', but only 'global.trusted.certificates' is
     # mounted into the pods of the subcharts - without it the auth service
