@@ -27,7 +27,7 @@ global:
 {% if proxy.http is defined %}
   httpProxy: {{ proxy.http }}
 {% endif %}
-{% if proxy.http is defined %}
+{% if proxy.https is defined %}
   httpsProxy: {{ proxy.https }}
 {% endif %}
 {% if proxy.dont_use_for is defined %}
