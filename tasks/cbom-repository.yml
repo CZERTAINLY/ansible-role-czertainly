@@ -1,0 +1,95 @@
+---
+# The CBOM repository is not a part of the ilm chart, it has a chart and a
+# version of its own, so it is installed as a second release into the same
+# namespace.
+#
+# Its CBOMs live in an object store instead of the database, which the rest of
+# the appliance is rebuilt from. To keep "wipe RKE2, run the playbook, it is
+# all back" true for this one as well, the bundled minio is given a volume
+# bound to a directory of the host: the volumes of the default storage class
+# go away with /var/lib/rancher, this directory doesn't.
+- name: Create the data directory of the cbom repository
+  ansible.builtin.file:
+    path: "{{ ilm_cbom_data_dir }}"
+    state: directory
+    # minio runs as non-root and the chart sets no fsGroup, so the uid of the
+    # container has to own this.
+    owner: "{{ ilm_cbom_data_owner }}"
+    group: "{{ ilm_cbom_data_owner }}"
+    mode: '0700'
+  tags:
+    - ilm_cbom
+
+- name: Create the storage of the cbom repository
+  ansible.builtin.template:
+    src: cbom-storage.yaml.j2
+    dest: /root/install/cbom-storage.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - ilm_cbom
+
+- name: Look up the volume of the cbom repository
+  kubernetes.core.k8s_info:
+    kind: PersistentVolume
+    name: "{{ ilm_cbom_release_name }}-data"
+  register: cbom_volume
+  when: not ansible_check_mode
+  tags:
+    - ilm_cbom
+
+# Reinstalling ILM deletes the namespace, and the claim goes with it. The
+# volume is kept by its Retain policy, but it stays behind as Released with
+# the uid of the deleted claim still in claimRef, and the claim recreated
+# below is then refused with "volume already bound to a different claim" -
+# minio waits for a volume that never binds. Dropping the reference makes the
+# volume Available again; the data in the directory is not touched by any of
+# this.
+- name: Release the volume of the cbom repository from the deleted claim
+  kubernetes.core.k8s:
+    state: patched
+    kind: PersistentVolume
+    name: "{{ ilm_cbom_release_name }}-data"
+    definition:
+      spec:
+        claimRef: null
+  when:
+    - not ansible_check_mode
+    - cbom_volume.resources | default([]) | length > 0
+    - (cbom_volume.resources[0].status.phase | default('')) == 'Released'
+  tags:
+    - ilm_cbom
+
+# Never removed again, not even when the component is switched off - the
+# volume is what holds the CBOMs.
+- name: Register the storage of the cbom repository
+  kubernetes.core.k8s:
+    state: present
+    src: /root/install/cbom-storage.yaml
+  when: not ansible_check_mode
+  tags:
+    - ilm_cbom
+
+- name: Copy values.yaml file of the cbom repository
+  ansible.builtin.template:
+    src: cbom-values.local.yaml.j2
+    dest: /root/install/cbom-values.local.yaml
+    mode: "0664"
+  tags:
+    - ilm_cbom
+    - ilm_cbom_values
+
+- name: Install the cbom repository
+  kubernetes.core.helm:
+    timeout: 10m
+    release_namespace: "{{ app_namespace }}"
+    release_name: "{{ ilm_cbom_release_name }}"
+    chart_ref: "oci://{{ docker.server }}/ilm-helm/cbom-repository"
+    chart_version: "{{ ilm_cbom_repository_version }}"
+    wait: true
+    values_files:
+      - /root/install/cbom-values.local.yaml
+  when: not ansible_check_mode
+  tags:
+    - ilm_cbom

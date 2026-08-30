@@ -1,0 +1,41 @@
+# {{ ansible_managed }}
+#
+# What Traefik has to do with a client certificate before ILM sees it. The
+# ingress of the chart refers to all three by "<namespace>-<name>@kubernetescrd",
+# see the annotations in ilm-values.local.yaml.
+---
+# Asks the client for a certificate and verifies it against the CA bundle the
+# chart keeps in the trusted-certificates secret. IfGiven, not Require: the
+# login screen and the OAuth2 flow have to stay reachable without one.
+apiVersion: traefik.io/v1alpha1
+kind: TLSOption
+metadata:
+  name: ilm-mtls
+  namespace: {{ app_namespace }}
+spec:
+  clientAuth:
+    secretNames:
+      - trusted-certificates
+    clientAuthType: VerifyClientCertIfGiven
+---
+# Puts the certificate into X-Forwarded-Tls-Client-Cert.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: pass-client-cert
+  namespace: {{ app_namespace }}
+spec:
+  passTLSClientCert:
+    pem: true
+---
+# Percent-encodes that header, see the plugin source for why. Has to run after
+# pass-client-cert, so it is second in the router.middlewares annotation.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cert-header-encode
+  namespace: {{ app_namespace }}
+spec:
+  plugin:
+    {{ ilm_traefik_plugin_name }}:
+      header: X-Forwarded-Tls-Client-Cert

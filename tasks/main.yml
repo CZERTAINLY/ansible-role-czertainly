@@ -15,20 +15,132 @@
       tags:
         - ilm_namespace
 
-    # all components are free these days, but keep this here for future reference
-    # - name: Verify harbor credentials are defined
-    #   ansible.builtin.assert:
-    #     that:
-    #       - docker.username is defined
-    #       - docker.password is defined
-    #     fail_msg: >
-    #       "Credentials for private docker repository is required when installing Cryptosense Discovery Provider"
-    #   when: ilm.cryptosenseDiscoveryProvider
+    # Not every component is free: the ones of ilm_private_components are
+    # pulled from the private repository of the registry. The task below
+    # verifies credentials that are configured, this one is about credentials
+    # that are missing - without it the install runs through and leaves those
+    # pods in ImagePullBackOff.
+    - name: Verify credentials for components from the private repository
+      ansible.builtin.assert:
+        that:
+          - docker.username is defined
+          - docker.password is defined
+        fail_msg: >-
+          {{ private_enabled | join(', ') }} need images from
+          {{ docker.server }}/ilm-private, set username and password or switch the components off.
+      vars:
+        # 'version' is a string, so comparing to true keeps it out of this.
+        enabled_components: >-
+          {{ ilm | dict2items | selectattr('value', 'equalto', true)
+             | map(attribute='key') | list }}
+        private_enabled: >-
+          {{ ilm_private_components | select('in', enabled_components) | list }}
+      when: private_enabled | length > 0
+      tags:
+        - ilm_secret
+
+    # The email notification provider is started by spring boot with
+    # 'spring.mail.test-connection: true', so it connects to the mail server
+    # and authenticates while its context comes up, and its image has no
+    # default for SMTP_HOST. Settings that are missing or wrong therefore kill
+    # the container instead of degrading a feature: the pod ends in
+    # CrashLoopBackOff and the install below sits out its 20 minute timeout
+    # before reporting something that never mentions mail. The two tasks below
+    # do the same exchange first.
+    - name: Verify the mail server settings
+      ansible.builtin.assert:
+        that:
+          - smtp_host | default('') | length > 0
+          - smtp_host | default('') != 'mail.example.com'
+          - (smtp_username | default('') | length == 0) or (smtp_password | default('') | length > 0)
+        fail_msg: >-
+          emailProvider is enabled, so a mail server has to be configured in
+          the Mail screen of ilm-tui or in /etc/ilm-ansible/vars/email.yml -
+          smtp_host is required and smtp_password goes with smtp_username.
+      when: ilm.emailProvider | default(false)
+      tags:
+        - ilm_smtp
+
+    - name: Verify the mail server accepts the settings
+      ansible.builtin.command:
+        argv: "{{ smtp_check_argv }}"
+      vars:
+        # The password is handed over in the environment, so that it stays out
+        # of the process list and out of the arguments ansible prints.
+        smtp_check_argv: >-
+          {{ [role_path ~ '/files/smtp-check.py',
+              '--host', smtp_host | string,
+              '--port', smtp_port | default(587) | string,
+              '--timeout', ilm_smtp_check_timeout | string]
+             + (['--tls'] if smtp_tls | default(true) | bool else ['--no-tls'])
+             + (['--user', smtp_username | string] if smtp_username | default('') | length > 0 else [])
+             + (['--ca-file', trustedCA_file] if trustedCA_file is defined else []) }}
+      environment:
+        SMTP_PASSWORD: "{{ smtp_password | default('') }}"
+      changed_when: false
+      # The reason is on stderr and is the point of the task, so it is
+      # reported by the task below instead of as 'non-zero return code'.
+      failed_when: false
+      register: smtp_check
+      when:
+        - ilm.emailProvider | default(false)
+        - ilm_smtp_check | bool
+      tags:
+        - ilm_smtp
+
+    - name: Report what the mail server answered
+      ansible.builtin.fail:
+        msg: >-
+          {{ smtp_check.stderr | default('') | trim }} - correct the settings
+          in the Mail screen of ilm-tui, switch emailProvider off, or set
+          ilm_smtp_check to false to install without this check.
+      when: smtp_check.rc | default(0) != 0
+      tags:
+        - ilm_smtp
+
+    # The chart keeps the CA certificates that the platform trusts in
+    # 'trusted.certificates', but only 'global.trusted.certificates' is
+    # mounted into the pods of the subcharts - without it the auth service
+    # validates a client certificate against the stock CA bundle of its image
+    # and rejects every one of them with "unable to get local issuer
+    # certificate". Read the defaults of the chart that is about to be
+    # installed, so that ilm-values.local.yaml can carry them over to the
+    # global key. An operator provided trustedCA_file wins over this.
+    - name: Read the default values of the chart
+      ansible.builtin.command:
+        cmd: >-
+          helm show values oci://{{ docker.server }}/ilm-helm/ilm
+          --version {{ ilm.version }}
+      register: chart_values
+      changed_when: false
+      tags:
+        - ilm_values
+        - ilm_cbom
+        - ilm_install
+
+    - name: Make the chart defaults available to the values template
+      ansible.builtin.set_fact:
+        default_values: "{{ chart_values.stdout | from_yaml }}"
+      tags:
+        - ilm_values
+        - ilm_cbom
+        - ilm_install
+
+    - name: Configure traefik for client certificate login
+      ansible.builtin.include_tasks:
+        file: traefik.yml
+      when: ilm_ingress_class == 'traefik'
+      # The tags of the included tasks have to be repeated here, an include
+      # only runs when the include itself matches the tag.
+      tags:
+        - ilm_traefik
+        - ilm_traefik_plugin
+        - ilm_traefik_ingress
 
     # in case invalid credentials this fails
     - name: Verify harbor credentials
       ansible.builtin.uri:
-        url: 'https://harbor.3key.company/api/v2.0/users/current'
+        url: "https://{{ docker.server }}/api/v2.0/users/current"
         user: "{{ docker.username }}"
         password: "{{ docker.password }}"
         method: GET
@@ -68,7 +180,7 @@
 
     - name: Create ingress-tls
       ansible.builtin.template:
-        src: "ingress-tls.yaml.j2"
+        src: "ilm-ingress-tls.yaml.j2"
         dest: "/root/install/ingress-tls.yaml"
         owner: "{{ appliance_user }}"
         group: "{{ appliance_group }}"
@@ -106,6 +218,7 @@
       tags:
         - ilm_values
         - ilm_values_local
+        - ilm_install
 
     - name: Check for custom values.custom.yaml
       ansible.builtin.stat:
@@ -114,6 +227,7 @@
         custom_file
       tags:
         - ilm_values
+        - ilm_install
 
     - name: Define value files for helm instalation
       ansible.builtin.set_fact:
@@ -122,15 +236,38 @@
           - "{{ custom_file.stat.path | default('/dev/null') }}"
       tags:
         - ilm_values
+        - ilm_install
 
     - name: Install
       kubernetes.core.helm:
         timeout: 20m
         release_namespace: "{{ app_namespace }}"
         release_name: "{{ app_release_name }}"
-        chart_ref: oci://harbor.3key.company/czertainly-helm/czertainly
+        chart_ref: "oci://{{ docker.server }}/ilm-helm/ilm"
         chart_version: "{{ ilm.version }}"
         wait: true
         values_files: "{{ values_files }}"
       tags:
         - ilm_install
+
+    - name: Install the cbom repository
+      ansible.builtin.include_tasks:
+        file: cbom-repository.yml
+      when: ilm.cbomRepository | default(false)
+      tags:
+        - ilm_cbom
+
+    # Switching the component off removes the release, the same way unticking
+    # any other component removes it from the ilm release. The volume, the
+    # claim and the data directory are left alone, so switching it on again
+    # picks the CBOMs back up.
+    - name: Remove the cbom repository
+      kubernetes.core.helm:
+        release_namespace: "{{ app_namespace }}"
+        release_name: "{{ ilm_cbom_release_name }}"
+        state: absent
+      when:
+        - not ansible_check_mode
+        - not (ilm.cbomRepository | default(false))
+      tags:
+        - ilm_cbom

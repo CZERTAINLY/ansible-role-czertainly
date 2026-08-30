@@ -1,0 +1,35 @@
+# {{ ansible_managed }}
+#
+# Traefik loads the plugin from a directory whose path has to be the module
+# name, so both the mountPath and the moduleName below are derived from
+# ilm_traefik_plugin_module. The chart builds the ConfigMap holding the source
+# out of the 'source' map and mounts it there, one key per file.
+#
+# The Go package name has to be the last element of the module path: traefik
+# resolves the plugin symbol as <last element>.New and fails to load the plugin
+# with "undefined: <name>" when the two differ.
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    experimental:
+      localPlugins:
+        {{ ilm_traefik_plugin_name }}:
+          moduleName: {{ ilm_traefik_plugin_module }}
+          mountPath: /plugins-local/src/{{ ilm_traefik_plugin_module }}
+          type: inlinePlugin
+          source:
+            # traefik reads the manifest of a plugin from '.traefik.yml'. The
+            # key here is what the file is called in the mount, so the source
+            # in files/ can keep a name without the leading dot - build-deb.sh
+            # drops every path containing '/.' from the package.
+            .traefik.yml: |
+{{ lookup('ansible.builtin.file', 'certheaderencode/traefik.yml') | indent(14, true) }}
+            go.mod: |
+{{ lookup('ansible.builtin.file', 'certheaderencode/go.mod') | indent(14, true) }}
+            certheaderencode.go: |
+{{ lookup('ansible.builtin.file', 'certheaderencode/certheaderencode.go') | indent(14, true) }}
