@@ -180,7 +180,7 @@
 
     - name: Create ingress-tls
       ansible.builtin.template:
-        src: "ingress-tls.yaml.j2"
+        src: "ilm-ingress-tls.yaml.j2"
         dest: "/root/install/ingress-tls.yaml"
         owner: "{{ appliance_user }}"
         group: "{{ appliance_group }}"
